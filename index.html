@@ -3,350 +3,388 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>马大灯笼节 - 极限反转抽奖</title>
+    <title>马大灯笼节 PTUM - 3D赛博复古老虎机</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <style>
         :root {
-            --bg-color: #4a0404; /* 暗红舞台背景 */
-            --gold: #d4af37;     /* 烫金装饰 */
-            --slot-bg: #1a1a1a;
-            --text-glow: 0 0 10px rgba(212, 175, 55, 0.8);
+            --bg-dark: #1a0202;
+            --neon-red: #ff2a2a;
+            --neon-gold: #ffd700;
+            --machine-bg: #2a0808;
+            --border-gold: #b8860b;
         }
 
         body {
             margin: 0;
-            padding: 0;
-            background-color: var(--bg-color);
-            background-image: radial-gradient(circle, #7a0808 0%, #2b0000 100%);
-            color: var(--gold);
+            height: 100vh;
+            background-color: var(--bg-dark);
+            background-image: 
+                radial-gradient(circle at center, #3a0000 0%, var(--bg-dark) 80%),
+                linear-gradient(0deg, transparent 24%, rgba(255, 42, 42, 0.05) 25%, rgba(255, 42, 42, 0.05) 26%, transparent 27%, transparent 74%, rgba(255, 42, 42, 0.05) 75%, rgba(255, 42, 42, 0.05) 76%, transparent 77%, transparent), 
+                linear-gradient(90deg, transparent 24%, rgba(255, 42, 42, 0.05) 25%, rgba(255, 42, 42, 0.05) 26%, transparent 27%, transparent 74%, rgba(255, 42, 42, 0.05) 75%, rgba(255, 42, 42, 0.05) 76%, transparent 77%, transparent);
+            background-size: 100% 100%, 50px 50px, 50px 50px;
             font-family: 'Courier New', Courier, monospace;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            height: 100vh;
             overflow: hidden;
+            perspective: 1200px; /* 开启全局 3D 视角 */
         }
 
+        /* 赛博复古全息文字 */
         .title {
-            font-size: 3rem;
-            margin-bottom: 30px;
-            text-shadow: var(--text-glow);
-            letter-spacing: 5px;
-            font-weight: bold;
+            font-size: 3.5rem;
+            color: var(--neon-gold);
+            text-transform: uppercase;
+            letter-spacing: 10px;
+            margin-bottom: 40px;
+            text-shadow: 0 0 10px var(--neon-gold), 0 0 20px #ff0000, 0 0 40px #ff0000;
+            animation: flicker 3s infinite alternate;
+            z-index: 10;
         }
 
-        /* 老虎机主体 */
-        .slot-machine {
+        /* 背景全息灯笼 (纯 CSS 效果) */
+        .hologram-lantern {
+            position: absolute;
+            font-size: 8rem;
+            color: rgba(255, 42, 42, 0.1);
+            text-shadow: 0 0 20px rgba(255, 42, 42, 0.3);
+            z-index: 0;
+            animation: float 6s ease-in-out infinite;
+            pointer-events: none;
+        }
+        .lantern-left { left: 10%; top: 20%; animation-delay: 0s; }
+        .lantern-right { right: 10%; top: 30%; animation-delay: 3s; }
+
+        /* 老虎机主体：3D 机械框 */
+        .machine-container {
             display: flex;
-            gap: 20px;
-            background: linear-gradient(145deg, #2a0000, #5a0000);
-            padding: 30px;
-            border: 5px solid var(--gold);
-            border-radius: 15px;
-            box-shadow: 0 15px 35px rgba(0,0,0,0.5), inset 0 0 20px rgba(0,0,0,0.8);
+            gap: 25px;
+            padding: 40px;
+            background: linear-gradient(135deg, #110000, var(--machine-bg));
+            border: 4px solid var(--border-gold);
+            border-radius: 20px;
+            box-shadow: 
+                0 0 30px rgba(255, 42, 42, 0.4),
+                inset 0 0 40px rgba(0, 0, 0, 0.9),
+                inset 0 0 10px var(--neon-gold);
             position: relative;
+            z-index: 10;
+            transform-style: preserve-3d;
+            transform: rotateX(5deg); /* 整体微微后仰，增加机械感 */
         }
 
-        /* 单个数字框 */
-        .reel-container {
-            width: 120px;
-            height: 160px;
-            background-color: var(--slot-bg);
-            border: 3px solid #8b6508;
-            border-radius: 10px;
+        /* 轮盘视窗容器 */
+        .reel-window {
+            width: 140px;
+            height: 180px;
+            background-color: #050000;
+            border: 3px solid #5a3a00;
+            border-radius: 12px;
+            position: relative;
+            perspective: 800px;
             overflow: hidden;
-            position: relative;
-            box-shadow: inset 0 10px 20px rgba(0,0,0,0.8);
+            box-shadow: inset 0 20px 40px rgba(0,0,0,1), inset 0 -20px 40px rgba(0,0,0,1);
         }
 
-        /* 顶部和底部的渐变阴影，增加滚轮的立体感 */
-        .reel-container::before, .reel-container::after {
+        /* 视窗上下黑色渐变遮罩，挡住圆柱体背面的数字 */
+        .reel-window::before, .reel-window::after {
             content: '';
             position: absolute;
+            left: 0; width: 100%; height: 50px; z-index: 5;
+            pointer-events: none;
+        }
+        .reel-window::before { top: 0; background: linear-gradient(to bottom, #000 0%, transparent 100%); }
+        .reel-window::after { bottom: 0; background: linear-gradient(to top, #000 0%, transparent 100%); }
+
+        /* 3D 圆柱体 */
+        .cylinder {
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            transform-style: preserve-3d;
+            /* 初始时不旋转 */
+            transform: translateZ(-215px) rotateX(0deg); 
+        }
+
+        /* 圆柱体上的每一个数字面 */
+        .face {
+            position: absolute;
+            width: 140px;
+            height: 140px;
             left: 0;
-            width: 100%;
-            height: 30px;
-            z-index: 2;
-        }
-        .reel-container::before {
-            top: 0;
-            background: linear-gradient(to bottom, rgba(26,26,26,1) 0%, rgba(26,26,26,0) 100%);
-        }
-        .reel-container::after {
-            bottom: 0;
-            background: linear-gradient(to top, rgba(26,26,26,1) 0%, rgba(26,26,26,0) 100%);
-        }
-
-        /* 数字长条 */
-        .strip {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            width: 100%;
-            /* 初始状态模糊，由 JS 控制 */
-        }
-
-        .number {
-            height: 160px;
+            top: 20px; /* 居中对齐视窗 (180 - 140)/2 */
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 6rem;
-            font-weight: bold;
-            color: #fff;
-            text-shadow: 0 0 15px rgba(255,255,255,0.5);
-        }
-
-        /* 高速滚动时的视觉模糊类 */
-        .blur-effect {
-            filter: blur(4px) drop-shadow(0 0 10px rgba(255,255,255,0.8));
+            font-size: 6.5rem;
+            font-weight: 900;
+            color: var(--neon-red);
+            text-shadow: 0 0 10px var(--neon-red), 0 0 20px #8a0000;
+            backface-visibility: hidden; /* 隐藏背面 */
         }
 
         .controls {
-            margin-top: 50px;
+            margin-top: 60px;
+            z-index: 10;
         }
 
+        /* 机械霓虹按钮 */
         button {
-            padding: 15px 40px;
-            font-size: 1.5rem;
+            padding: 20px 50px;
+            font-size: 1.8rem;
             font-weight: bold;
-            background: linear-gradient(to bottom, #d4af37, #b8860b);
-            color: #2b0000;
-            border: none;
-            border-radius: 50px;
+            font-family: 'Courier New', Courier, monospace;
+            background: #2a0000;
+            color: var(--neon-gold);
+            border: 2px solid var(--neon-gold);
+            border-radius: 10px;
             cursor: pointer;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.5);
-            transition: transform 0.1s, filter 0.2s;
+            text-transform: uppercase;
+            box-shadow: 0 6px 0 #8b6508, 0 0 20px rgba(255, 215, 0, 0.4);
+            transition: all 0.1s;
+            position: relative;
         }
 
         button:hover {
-            filter: brightness(1.2);
-            transform: translateY(-2px);
+            background: #3a0000;
+            box-shadow: 0 6px 0 #8b6508, 0 0 30px rgba(255, 215, 0, 0.7);
         }
 
         button:active {
-            transform: translateY(2px);
-            box-shadow: 0 2px 5px rgba(0,0,0,0.5);
+            top: 6px;
+            box-shadow: 0 0 0 #8b6508, 0 0 10px rgba(255, 215, 0, 0.4);
         }
 
         button:disabled {
-            background: #555;
-            color: #888;
+            background: #111;
+            color: #444;
+            border-color: #444;
+            box-shadow: none;
             cursor: not-allowed;
-            transform: none;
+            top: 6px;
+        }
+
+        /* 动画定义 */
+        @keyframes flicker {
+            0%, 19%, 21%, 23%, 25%, 54%, 56%, 100% { text-shadow: 0 0 10px var(--neon-gold), 0 0 20px #ff0000, 0 0 40px #ff0000; }
+            20%, 24%, 55% { text-shadow: none; }
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-30px); }
+        }
+
+        /* 胜利时的屏幕爆闪光效 */
+        .win-flash {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(255, 215, 0, 0.2);
+            z-index: 999;
+            pointer-events: none;
+            opacity: 0;
         }
     </style>
 </head>
 <body>
 
-    <div class="title">灯笼节幸运抽奖</div>
+    <div class="hologram-lantern lantern-left">🏮</div>
+    <div class="hologram-lantern lantern-right">🏮</div>
 
-    <div class="slot-machine">
-        <div class="reel-container"><div class="strip" id="strip-0"></div></div>
-        <div class="reel-container"><div class="strip" id="strip-1"></div></div>
-        <div class="reel-container"><div class="strip" id="strip-2"></div></div>
+    <div class="title">PTUM JACKPOT</div>
+
+    <div class="machine-container">
+        <div class="reel-window"><div class="cylinder" id="cyl-0"></div></div>
+        <div class="reel-window"><div class="cylinder" id="cyl-1"></div></div>
+        <div class="reel-window"><div class="cylinder" id="cyl-2"></div></div>
     </div>
 
     <div class="controls">
-        <button id="start-btn">开始抽奖</button>
+        <button id="start-btn">INITIATE_</button>
     </div>
+
+    <div class="win-flash" id="flash"></div>
 
     <script>
         // ==========================================
-        // 配置区域 (Configuration)
+        // 配置与音效映射
         // ==========================================
-        
-        // 1. 设定中奖号码和假动作号码
-        const actualWinningNumber = [1, 2, 7]; // 真实中奖号码 (127)
-        // 假动作：前两位一样，最后一位故意错开一格 (比如停在 8，然后倒退回 7)
-        const fakePeakNumber = [1, 2, 8];      
+        const TARGET_REAL = [1, 2, 7]; // 真实中奖号码
+        const TARGET_FAKE = [1, 2, 8]; // 假动作号码 (最后一位假装停在 8)
 
-        // 2. 音效文件占位符 (请在同级目录下放入真实的 MP3 文件)
-        // 如果没有文件，浏览器控制台会报错，但动画依然会执行
-        const audioSources = { 
-            reel: 'fast_reel.mp3',       // 高速齿轮转动声
-            stop1: 'clack.mp3',          // 百位卡死“啪”声
-            stop2: 'dong.mp3',           // 十位卡死“咚”声
-            slowPulse: 'heartbeat.mp3',  // 越来越慢的心跳/滴答声
-            fakeStop: 'pause.mp3',       // 假动作停顿音效
-            snapBack: 'glitch.mp3',      // 卡带/弹簧断裂音效
-            win: 'fanfare.mp3'           // 爆发中奖音乐
+        const audios = { 
+            fastReel: new Audio('fastReel.mp3'),   // 齿轮极速
+            stop1: new Audio('stop1.mp3'),         // 砰！带金属余音
+            stop2: new Audio('stop2.mp3'),         // 砰！带金属余音
+            struggle: new Audio('struggle.mp3'),   // 齿轮卡壳摩擦声
+            fakeStop: new Audio('fakeStop.mp3'),   // 完美假停顿滴答声
+            snapBack: new Audio('snapBack.mp3'),   // 暴力卡带回弹声
+            win: new Audio('win.mp3')              // 赛博风中奖爆发音乐
         };
 
-        const audios = {};
-        for (let key in audioSources) {
-            audios[key] = new Audio(audioSources[key]);
-            audios[key].preload = 'auto';
+        // ==========================================
+        // 3D 几何与引擎初始化
+        // ==========================================
+        const numFaces = 10;
+        const anglePerFace = 360 / numFaces; // 36度
+        // 半径计算：r = (高度/2) / tan(18度)
+        const radius = Math.round((140 / 2) / Math.tan(Math.PI / numFaces)); // 约 215px
+
+        // 构建 3D 圆柱体
+        function buildCylinder(cylinderId, startNum = 0) {
+            const cyl = document.getElementById(`cyl-${cylinderId}`);
+            cyl.innerHTML = '';
+            
+            // 设定 Z 轴后移，让圆柱体的前表面贴合视窗
+            gsap.set(cyl, { z: -radius });
+
+            for (let i = 0; i < numFaces; i++) {
+                const face = document.createElement('div');
+                face.className = 'face';
+                // 让数字按照 0, 1, 2... 的顺序排列
+                face.innerText = (startNum + i) % 10;
+                
+                // 3D 空间排布：
+                // 如果向下滚动，前面的面应该向上去。
+                // 面 i 旋转 -i * 36 度
+                const rotateX = -i * anglePerFace;
+                face.style.transform = `rotateX(${rotateX}deg) translateZ(${radius}px)`;
+                cyl.appendChild(face);
+            }
         }
 
-        // ==========================================
-        // 初始化老虎机 DOM
-        // ==========================================
-        const numHeight = 160; // 每个数字的高度 (px)
-        const totalLoops = 5;  // 滚动圈数，决定了“条”的长度
-
-        // 生成数字条的函数
-        function buildStrip(stripId, targetNum, isLastDigit = false) {
-            const stripEl = document.getElementById(`strip-${stripId}`);
-            stripEl.innerHTML = '';
-            
-            // 构建一个很长的数字序列用于滚动
-            // 顺序： 0, 1, 2...9, 0, 1... 结尾是我们的目标数字
-            let sequence = [];
-            for (let i = 0; i < totalLoops; i++) {
-                for (let j = 0; j <= 9; j++) {
-                    sequence.push(j);
-                }
-            }
-            
-            // 把目标数字及周围的数字拼接到最后
-            if (!isLastDigit) {
-                sequence.push(targetNum);
-            } else {
-                // 如果是个位数，它的序列结尾需要是： ...真实数字, 假动作数字
-                // 例如：真实是 7，假动作是 8。那么条带最下方必须是 7，紧接着是 8。
-                // 因为我们是往上滚动（y轴负向），显示窗口是从上往下看条带。
-                // 所以 DOM 结构（从上到下）应该是： [..., 6, 7, 8]
-                // 这样滚动到最底下时，先显示 7，再往下滚显示 8（假动作停住）。然后瞬间向上退格回到 7。
-                sequence.push(actualWinningNumber[2]); // 7
-                sequence.push(fakePeakNumber[2]);      // 8
-            }
-
-            sequence.forEach(num => {
-                const div = document.createElement('div');
-                div.className = 'number';
-                div.innerText = num;
-                stripEl.appendChild(div);
-            });
-
-            // 初始重置位置到最上方（显示第一个数字）
-            gsap.set(stripEl, { y: 0 });
-            return sequence.length;
-        }
-
-        const len0 = buildStrip(0, actualWinningNumber[0]);
-        const len1 = buildStrip(1, actualWinningNumber[1]);
-        const len2 = buildStrip(2, actualWinningNumber[2], true); // 个位数采用特殊构造
+        buildCylinder(0);
+        buildCylinder(1);
+        buildCylinder(2);
 
         // ==========================================
-        // 核心动画逻辑 (GSAP Timeline)
+        // 核心动画：物理级时间线
         // ==========================================
         const startBtn = document.getElementById('start-btn');
 
         startBtn.addEventListener('click', () => {
             startBtn.disabled = true;
             
-            // 播放狂飙启动音效
-            audios.reel.loop = true;
-            audios.reel.play().catch(e => console.log("音效未加载"));
+            // 尝试播放启动音效
+            audios.fastReel.loop = true;
+            audios.fastReel.play().catch(e => {});
 
-            const strips = [
-                document.getElementById('strip-0'),
-                document.getElementById('strip-1'),
-                document.getElementById('strip-2')
+            const cyls = [
+                document.getElementById('cyl-0'),
+                document.getElementById('cyl-1'),
+                document.getElementById('cyl-2')
             ];
 
-            // 添加视觉模糊
-            strips.forEach(strip => strip.classList.add('blur-effect'));
-
-            // 计算目标 Y 轴偏移量
-            // (总长度 - 1) * 高度，即滚动到最后一个元素
-            const targetY0 = -((len0 - 1) * numHeight); 
-            const targetY1 = -((len1 - 1) * numHeight);
+            // 基础滚动圈数 (增加机械感：转很多圈)
+            const baseLoops = 15; 
             
-            // 个位数：倒数第二个是真实数字(7)，倒数第一个是假动作数字(8)
-            const fakeY2 = -((len2 - 1) * numHeight); // 滚到 8
-            const realY2 = -((len2 - 2) * numHeight); // 退回到 7
+            // 计算目标旋转角度
+            // 当圆柱体旋转正向 angle 时，对应的 face (旋转了 -angle) 就会转到前面。
+            const getTargetAngle = (targetNum, loops) => (loops * 360) + (targetNum * anglePerFace);
+
+            const angle0 = getTargetAngle(TARGET_REAL[0], baseLoops);
+            const angle1 = getTargetAngle(TARGET_REAL[1], baseLoops + 2);
+            
+            // 个位数需要算两个角度：假动作角度 和 真实角度
+            const loops3 = baseLoops + 4;
+            const fakeAngle = getTargetAngle(TARGET_FAKE[2], loops3);
+            const realAngle = getTargetAngle(TARGET_REAL[2], loops3); // 注意：因为真实是7，假是8。7比8小36度。圆柱体往回转，完美契合“倒退”物理逻辑。
 
             const tl = gsap.timeline();
 
-            // 1. 定格 1 (百位)： 3秒后瞬间卡死
-            tl.to(strips[0], {
-                y: targetY0,
-                duration: 3,
-                ease: "power2.inOut", // 前面加速，后面平滑减速定格
+            // --- 启动时的后仰蓄力 (物理惯性) ---
+            tl.to(cyls, { rotationX: -20, duration: 0.3, ease: "power1.inOut" });
+
+            // --- 1. 定格百位：生硬带机械回弹 ---
+            tl.to(cyls[0], {
+                rotationX: angle0,
+                duration: 2.5,
+                ease: "back.out(1.2)", // 超过目标点再弹回来
+                onComplete: () => { audios.stop1.play().catch(e=>{}); }
+            });
+
+            // --- 2. 定格十位：更长的缓冲，更重的定格 ---
+            tl.to(cyls[1], {
+                rotationX: angle1,
+                duration: 4,
+                ease: "back.out(1.5)",
+                onComplete: () => { 
+                    audios.fastReel.pause(); 
+                    audios.stop2.play().catch(e=>{}); 
+                    audios.struggle.play().catch(e=>{}); // 个位开始费力
+                }
+            }, "<0.5");
+
+            // --- 3. 个位极限拉扯 (拆分为多段 Timeline 模拟卡壳) ---
+            // A. 前半段正常极速滚
+            tl.to(cyls[2], { rotationX: fakeAngle - 180, duration: 3, ease: "power1.in" }, 0.3);
+            
+            // B. 开始费力：像被异物卡住，一段一段地磨过去
+            tl.to(cyls[2], { rotationX: fakeAngle - 72, duration: 1.5, ease: "power2.inOut" }); // 剩2格
+            tl.to(cyls[2], { rotationX: fakeAngle - 36, duration: 2, ease: "power1.inOut" });   // 剩1格，极度缓慢
+            
+            // C. 假动作定格：沉重地咬合进去
+            tl.to(cyls[2], { 
+                rotationX: fakeAngle, 
+                duration: 1.5, 
+                ease: "power4.out", // 极强减速，仿佛彻底没力气了
                 onComplete: () => {
-                    strips[0].classList.remove('blur-effect');
-                    audios.stop1.play().catch(e=>{}); // 播放“啪”
+                    audios.struggle.pause();
+                    audios.fakeStop.play().catch(e=>{});
                 }
             });
 
-            // 2. 定格 2 (十位)： 5秒后卡死
-            tl.to(strips[1], {
-                y: targetY1,
-                duration: 5,
-                ease: "power2.inOut",
-                onComplete: () => {
-                    strips[1].classList.remove('blur-effect');
-                    audios.reel.pause(); // 停止高速齿轮音效
-                    audios.stop2.play().catch(e=>{}); // 播放“咚”
-                    audios.slowPulse.play().catch(e=>{}); // 开始播放心跳/滴答声
-                }
-            }, "<"); // "<" 表示与前一个动画同时开始
+            // --- 4. 屏息停顿 2 秒 ---
+            tl.to({}, { duration: 2 });
 
-            // 3. 极限拉扯 (个位)：极慢的拖泥带水，滚向假动作数字
-            tl.to(strips[2], {
-                y: fakeY2,
-                duration: 8, // 持续时间最长，营造极其缓慢的最后阶段
-                ease: "power4.out", // 极强的减速效果，最后几格像爬一样
+            // --- 5. 巅峰暴力反转 ---
+            tl.to(cyls[2], {
+                rotationX: realAngle, // 瞬间将角度从 8 退回 7
+                duration: 0.1,        // 0.1秒极限速度
+                ease: "back.out(4)",  // GSAP Back 缓动参数拉满，产生“啪”的断裂暴力回弹视觉
+                onStart: () => { audios.snapBack.play().catch(e=>{}); },
                 onComplete: () => {
-                    strips[2].classList.remove('blur-effect');
-                    audios.slowPulse.pause();
-                    audios.fakeStop.play().catch(e=>{});
-                }
-            }, "<");
-
-            // 4. 假动作停顿：Timeline 在这里自然延时
-            // (停留在 8，持续 1.8 秒，让人信以为真)
-            tl.to({}, { duration: 1.8 }); 
-
-            // 5. 巅峰反转：极其生硬、快速地倒退一格！
-            tl.to(strips[2], {
-                y: realY2, // 瞬间变回真实数字
-                duration: 0.15, // 极短的时间，强调“断裂/生硬”感
-                ease: "back.out(4)", // 强烈的回弹缓动，模拟弹簧崩断的视觉冲击
-                onStart: () => {
-                    audios.snapBack.play().catch(e=>{});
-                },
-                onComplete: () => {
-                    // 6. 中奖爆发
                     audios.win.play().catch(e=>{});
-                    triggerConfetti();
-                    startBtn.innerText = "重新抽奖";
+                    triggerCyberWin();
+                    startBtn.innerText = "SYSTEM_REBOOT";
                     startBtn.disabled = false;
-                    
-                    // 重置逻辑绑定到下一次点击
                     startBtn.onclick = () => location.reload();
                 }
             });
         });
 
-        // 撒花特效函数
-        function triggerConfetti() {
-            var duration = 3000;
+        // ==========================================
+        // 赛博中奖特效
+        // ==========================================
+        function triggerCyberWin() {
+            // 屏幕爆闪
+            gsap.to("#flash", { opacity: 1, duration: 0.1, yoyo: true, repeat: 5 });
+            // 老虎机霓虹狂闪
+            gsap.to(".machine-container", {
+                boxShadow: "0 0 80px #ffd700, inset 0 0 60px #ff0000",
+                borderColor: "#ff2a2a",
+                duration: 0.2,
+                yoyo: true,
+                repeat: -1
+            });
+            // 撒出红金相间的纸片
+            var duration = 4000;
             var end = Date.now() + duration;
-
             (function frame() {
                 confetti({
-                    particleCount: 5,
-                    angle: 60,
-                    spread: 55,
-                    origin: { x: 0 },
-                    colors: ['#d4af37', '#ff0000', '#ffffff'] // 配合主题色的彩带
+                    particleCount: 8, angle: 60, spread: 80, origin: { x: 0, y: 0.8 },
+                    colors: ['#ff2a2a', '#ffd700', '#8a0000'],
+                    shapes: ['square'] // 赛博风用方形纸片
                 });
                 confetti({
-                    particleCount: 5,
-                    angle: 120,
-                    spread: 55,
-                    origin: { x: 1 },
-                    colors: ['#d4af37', '#ff0000', '#ffffff']
+                    particleCount: 8, angle: 120, spread: 80, origin: { x: 1, y: 0.8 },
+                    colors: ['#ff2a2a', '#ffd700', '#8a0000'],
+                    shapes: ['square']
                 });
-
-                if (Date.now() < end) {
-                    requestAnimationFrame(frame);
-                }
+                if (Date.now() < end) requestAnimationFrame(frame);
             }());
         }
     </script>
