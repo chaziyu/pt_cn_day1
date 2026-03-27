@@ -8,18 +8,18 @@
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <style>
         :root {
-            --bg-deep: #2b0000;
+            --bg-deep: #1a0000;
             --red-bright: #ff1a1a;
+            --red-dark: #8b0000;
             --gold-light: #ffdf00;
             --gold-dark: #b8860b;
-            --gold-border: linear-gradient(145deg, #ffd700, #b8860b, #ffd700);
+            --gold-border: linear-gradient(145deg, #ffd700, #b8860b, #ffea70, #b8860b);
         }
 
         body {
             margin: 0;
             height: 100vh;
-            /* 华丽红丝绒舞台背景 */
-            background: radial-gradient(ellipse at center, #5e0000 0%, #1a0000 100%);
+            background: radial-gradient(circle at 50% 40%, #4a0000 0%, var(--bg-deep) 80%);
             font-family: "Microsoft YaHei", "PingFang SC", sans-serif;
             display: flex;
             flex-direction: column;
@@ -29,7 +29,18 @@
             perspective: 1200px;
         }
 
-        /* 动态背景星火/灯笼光晕飘落效果 */
+        /* 氛围：复古 CRT 扫描线 */
+        .scanlines {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(to bottom, rgba(255,255,255,0), rgba(255,255,255,0) 50%, rgba(0,0,0,0.2) 50%, rgba(0,0,0,0.2));
+            background-size: 100% 4px;
+            z-index: 50;
+            pointer-events: none;
+            opacity: 0.3;
+        }
+
+        /* 氛围：背景星火飘落 */
         .sparks {
             position: absolute;
             top: 0; left: 0; width: 100%; height: 100%;
@@ -39,76 +50,92 @@
                 radial-gradient(2px 2px at 20px 30px, var(--gold-light), rgba(0,0,0,0)),
                 radial-gradient(2px 2px at 40px 70px, var(--red-bright), rgba(0,0,0,0)),
                 radial-gradient(3px 3px at 50px 160px, var(--gold-light), rgba(0,0,0,0)),
-                radial-gradient(2px 2px at 90px 40px, var(--gold-dark), rgba(0,0,0,0)),
-                radial-gradient(3px 3px at 130px 80px, var(--red-bright), rgba(0,0,0,0));
+                radial-gradient(2px 2px at 90px 40px, var(--gold-dark), rgba(0,0,0,0));
             background-repeat: repeat;
             background-size: 200px 200px;
-            animation: sparks-fall 10s linear infinite;
-            opacity: 0.6;
+            animation: sparks-fall 15s linear infinite;
+            opacity: 0.4;
         }
-
         @keyframes sparks-fall {
             0% { transform: translateY(-200px); }
             100% { transform: translateY(100vh); }
         }
 
-        /* 华丽主标题 */
+        /* 标题区域 */
         .title-container {
             z-index: 10;
             text-align: center;
-            margin-bottom: 50px;
+            margin-bottom: 40px;
+            animation: float-title 4s ease-in-out infinite;
+        }
+        @keyframes float-title {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
         }
         
         .title {
             font-size: 4.5rem;
             color: transparent;
             background: var(--gold-border);
-            -webkit-background-clip: text;
             background-clip: text;
+            -webkit-background-clip: text;
             font-weight: 900;
-            letter-spacing: 8px;
-            text-shadow: 0 10px 20px rgba(0,0,0,0.8);
+            letter-spacing: 12px;
+            text-shadow: 0 15px 30px rgba(0,0,0,0.9);
             margin: 0;
+            filter: drop-shadow(0 0 10px rgba(255, 215, 0, 0.3));
         }
 
         .subtitle {
             font-size: 1.5rem;
             color: #ffaaaa;
-            letter-spacing: 15px;
+            letter-spacing: 20px;
             margin-top: 10px;
             text-shadow: 0 0 10px var(--red-bright);
         }
 
-        /* 机器主体 - 重金属烫金质感 */
+        /* 机器主体 - 增加呼吸发光特效 */
         .machine-wrapper {
             position: relative;
             z-index: 10;
-            padding: 30px;
-            background: linear-gradient(to bottom, #3a0000, #110000);
-            border-radius: 20px;
+            padding: 35px;
+            background: linear-gradient(to bottom, #2b0000, #0a0000);
+            border-radius: 25px;
             box-shadow: 
-                0 20px 50px rgba(0,0,0,0.9),
+                0 30px 60px rgba(0,0,0,0.9),
                 inset 0 0 0 4px #4a0000,
-                inset 0 0 0 8px var(--gold-dark);
+                inset 0 0 0 8px var(--gold-dark),
+                0 0 30px rgba(255, 215, 0, 0.1);
             transform-style: preserve-3d;
-            transform: rotateX(8deg); /* 微微后仰 */
+            transform: rotateX(5deg);
+            /* 待机浮动动画 */
+            animation: machine-breathe 6s ease-in-out infinite, neon-pulse 3s infinite alternate;
         }
 
-        /* 机器顶部的发光装饰条 */
+        @keyframes machine-breathe {
+            0%, 100% { transform: rotateX(5deg) translateY(0); }
+            50% { transform: rotateX(7deg) translateY(-15px); }
+        }
+        @keyframes neon-pulse {
+            0% { box-shadow: 0 30px 60px rgba(0,0,0,0.9), inset 0 0 0 4px #4a0000, inset 0 0 0 8px var(--gold-dark), 0 0 10px rgba(255, 215, 0, 0.1); }
+            100% { box-shadow: 0 30px 60px rgba(0,0,0,0.9), inset 0 0 0 4px #4a0000, inset 0 0 0 8px var(--gold-dark), 0 0 40px rgba(255, 215, 0, 0.4); }
+        }
+
+        /* 顶牌装饰 */
         .machine-wrapper::before {
             content: "幸 运 抽 奖";
             position: absolute;
-            top: -20px;
+            top: -25px;
             left: 50%;
             transform: translateX(-50%);
             background: var(--gold-border);
             color: #2b0000;
-            padding: 5px 30px;
-            font-weight: bold;
-            font-size: 1.2rem;
-            border-radius: 10px;
-            box-shadow: 0 0 20px var(--gold-light);
-            letter-spacing: 5px;
+            padding: 8px 40px;
+            font-weight: 900;
+            font-size: 1.3rem;
+            border-radius: 12px;
+            box-shadow: 0 5px 20px var(--gold-light), inset 0 2px 5px rgba(255,255,255,0.5);
+            letter-spacing: 6px;
         }
 
         .machine-container {
@@ -116,26 +143,29 @@
             gap: 25px;
             padding: 20px;
             background: #000;
-            border-radius: 10px;
-            box-shadow: inset 0 0 30px rgba(0,0,0,1);
+            border-radius: 15px;
+            box-shadow: inset 0 0 40px rgba(0,0,0,1);
+            position: relative;
         }
 
-        /* 单个轮盘视窗 - 玻璃反光质感 */
+        /* 轮盘视窗 - 内部增加极微弱的待机呼吸光 */
         .reel-window {
             width: 150px;
             height: 200px;
-            background-color: #0a0000;
+            background-color: #050000;
             border: 4px solid #5a3a00;
             border-radius: 15px;
             position: relative;
             perspective: 800px;
             overflow: hidden;
-            box-shadow: 
-                inset 0 0 20px var(--red-bright),
-                0 0 15px rgba(255, 215, 0, 0.2);
+            box-shadow: inset 0 0 20px rgba(255, 26, 26, 0.2);
+            animation: window-pulse 4s infinite alternate;
+        }
+        @keyframes window-pulse {
+            0% { box-shadow: inset 0 0 10px rgba(255, 26, 26, 0.1); }
+            100% { box-shadow: inset 0 0 30px rgba(255, 26, 26, 0.4); }
         }
 
-        /* 玻璃弧面反光层 */
         .reel-window::after {
             content: '';
             position: absolute;
@@ -146,20 +176,14 @@
             z-index: 20;
         }
 
-        /* 上下暗角遮罩，增强 3D 圆柱体进出视线的真实感 */
         .reel-shadow {
             position: absolute;
             top: 0; left: 0; width: 100%; height: 100%;
-            background: linear-gradient(to bottom, 
-                rgba(0,0,0,0.95) 0%, 
-                rgba(0,0,0,0) 25%, 
-                rgba(0,0,0,0) 75%, 
-                rgba(0,0,0,0.95) 100%);
+            background: linear-gradient(to bottom, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0) 25%, rgba(0,0,0,0) 75%, rgba(0,0,0,0.95) 100%);
             pointer-events: none;
             z-index: 10;
         }
 
-        /* 3D 圆柱体容器 */
         .cylinder {
             width: 100%;
             height: 100%;
@@ -167,73 +191,101 @@
             transform-style: preserve-3d;
         }
 
-        /* 数字面板 */
         .face {
             position: absolute;
             width: 150px;
             height: 150px;
             left: 0;
-            top: 25px; /* (200 - 150) / 2 居中 */
+            top: 25px; 
             display: flex;
             align-items: center;
             justify-content: center;
             font-size: 7.5rem;
             font-weight: 900;
             color: #fff;
-            text-shadow: 0 0 15px var(--red-bright), 0 0 30px var(--red-bright);
+            text-shadow: 0 0 15px var(--red-bright), 0 0 30px var(--red-dark);
             backface-visibility: hidden;
+            font-family: 'Courier New', Courier, monospace; /* 数字使用等宽更具机械感 */
         }
 
-        /* 操作台 */
+        /* 待机提示与操作台 */
         .controls {
-            margin-top: 60px;
+            margin-top: 50px;
             z-index: 10;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
         }
 
-        /* 大红灯笼风格按钮 */
+        .status-text {
+            color: var(--gold-light);
+            font-size: 1.2rem;
+            letter-spacing: 5px;
+            margin-bottom: 20px;
+            opacity: 0.8;
+            animation: text-blink 1.5s infinite;
+        }
+        @keyframes text-blink {
+            0%, 100% { opacity: 0.3; }
+            50% { opacity: 1; text-shadow: 0 0 10px var(--gold-light); }
+        }
+
         button {
-            padding: 20px 60px;
+            padding: 20px 70px;
             font-size: 2.2rem;
-            font-weight: bold;
-            font-family: inherit;
-            background: linear-gradient(to bottom, #d90000, #8b0000);
+            font-weight: 900;
+            background: linear-gradient(to bottom, #e60000, #8b0000);
             color: var(--gold-light);
             border: 3px solid var(--gold-light);
             border-radius: 50px;
             cursor: pointer;
-            text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+            text-shadow: 0 2px 4px rgba(0,0,0,0.8);
             box-shadow: 
                 0 10px 0 #4a0000, 
-                0 15px 20px rgba(0,0,0,0.6),
-                inset 0 0 15px rgba(255, 255, 255, 0.3);
+                0 15px 30px rgba(0,0,0,0.8),
+                inset 0 0 15px rgba(255, 255, 255, 0.4);
             transition: all 0.1s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* 按钮扫光特效 */
+        button::after {
+            content: '';
+            position: absolute;
+            top: 0; left: -100%;
+            width: 50%; height: 100%;
+            background: linear-gradient(to right, rgba(255,255,255,0), rgba(255,255,255,0.5), rgba(255,255,255,0));
+            transform: skewX(-25deg);
+            animation: button-sweep 3s infinite;
+        }
+        @keyframes button-sweep {
+            0% { left: -100%; }
+            20% { left: 200%; }
+            100% { left: 200%; }
         }
 
         button:hover {
             filter: brightness(1.2);
-            box-shadow: 
-                0 10px 0 #4a0000, 
-                0 15px 30px rgba(255, 215, 0, 0.4),
-                inset 0 0 15px rgba(255, 255, 255, 0.3);
+            transform: translateY(-2px);
+            box-shadow: 0 12px 0 #4a0000, 0 20px 40px rgba(255, 215, 0, 0.4), inset 0 0 15px rgba(255, 255, 255, 0.5);
         }
 
         button:active {
             transform: translateY(10px);
-            box-shadow: 
-                0 0 0 #4a0000, 
-                0 5px 10px rgba(0,0,0,0.6),
-                inset 0 0 15px rgba(255, 255, 255, 0.3);
+            box-shadow: 0 0 0 #4a0000, 0 5px 10px rgba(0,0,0,0.6), inset 0 0 15px rgba(255, 255, 255, 0.3);
         }
 
         button:disabled {
-            background: #444;
-            color: #888;
-            border-color: #666;
-            box-shadow: 0 10px 0 #222;
+            background: #333;
+            color: #666;
+            border-color: #555;
+            box-shadow: 0 10px 0 #111;
             cursor: not-allowed;
-            filter: grayscale(1);
             transform: none;
+            filter: none;
         }
+        button:disabled::after { display: none; }
 
         .win-flash {
             position: fixed;
@@ -243,18 +295,41 @@
             pointer-events: none;
             opacity: 0;
         }
+
+        /* 左右摇摆灯笼装饰 (CSS 绘制) */
+        .lantern-side {
+            position: absolute;
+            top: 50px;
+            font-size: 6rem;
+            filter: drop-shadow(0 0 20px rgba(255, 26, 26, 0.6));
+            transform-origin: top center;
+            animation: swing 4s ease-in-out infinite alternate;
+            z-index: 5;
+            pointer-events: none;
+        }
+        .lantern-left { left: 10%; animation-delay: 0s; }
+        .lantern-right { right: 10%; animation-delay: -2s; }
+
+        @keyframes swing {
+            0% { transform: rotate(10deg); }
+            100% { transform: rotate(-10deg); }
+        }
     </style>
 </head>
 <body>
 
+    <div class="scanlines"></div>
     <div class="sparks"></div>
+
+    <div class="lantern-side lantern-left">🏮</div>
+    <div class="lantern-side lantern-right">🏮</div>
 
     <div class="title-container">
         <h1 class="title">马大灯笼节</h1>
         <div class="subtitle">终 极 抽 奖</div>
     </div>
 
-    <div class="machine-wrapper">
+    <div class="machine-wrapper" id="machine">
         <div class="machine-container">
             <div class="reel-window">
                 <div class="reel-shadow"></div>
@@ -272,15 +347,13 @@
     </div>
 
     <div class="controls">
+        <div class="status-text" id="status-text">SYSTEM STANDBY // 系统待机中...</div>
         <button id="start-btn">开 始 抽 奖</button>
     </div>
 
     <div class="win-flash" id="flash"></div>
 
     <script>
-        // ==========================================
-        // 音效占位符
-        // ==========================================
         const audios = { 
             fastReel: new Audio('fastReel.mp3'),
             stop1: new Audio('stop1.mp3'),
@@ -291,12 +364,9 @@
             win: new Audio('win.mp3')
         };
 
-        // ==========================================
-        // 3D 几何初始化
-        // ==========================================
         const numFaces = 10;
-        const anglePerFace = 360 / numFaces; // 36度
-        const radius = Math.round((150 / 2) / Math.tan(Math.PI / numFaces)); // 约 230px
+        const anglePerFace = 360 / numFaces; 
+        const radius = Math.round((150 / 2) / Math.tan(Math.PI / numFaces)); 
 
         function buildCylinder(cylinderId) {
             const cyl = document.getElementById(`cyl-${cylinderId}`);
@@ -306,7 +376,7 @@
             for (let i = 0; i < numFaces; i++) {
                 const face = document.createElement('div');
                 face.className = 'face';
-                face.innerText = i; // 面上数字依次为 0-9
+                face.innerText = i; 
                 const rotateX = -i * anglePerFace;
                 face.style.transform = `rotateX(${rotateX}deg) translateZ(${radius}px)`;
                 cyl.appendChild(face);
@@ -317,20 +387,26 @@
         buildCylinder(1);
         buildCylinder(2);
 
-        // 初始化到 000
-        gsap.set('.cylinder', { rotationX: 0 });
+        // 记录当前机器停顿的角度，确保每次继续抽奖时不会发生画面跳闪
+        let currentAngles = [0, 0, 0];
+        gsap.set('#cyl-0', { rotationX: currentAngles[0] });
+        gsap.set('#cyl-1', { rotationX: currentAngles[1] });
+        gsap.set('#cyl-2', { rotationX: currentAngles[2] });
 
-        // ==========================================
-        // 核心逻辑：绝对公平的随机与假动作计算
-        // ==========================================
         const startBtn = document.getElementById('start-btn');
+        const statusText = document.getElementById('status-text');
+        const machineWrapper = document.getElementById('machine');
         let isSpinning = false;
 
         startBtn.addEventListener('click', () => {
             if (isSpinning) return;
             isSpinning = true;
             
-            // 生成三个完全随机的公平数字 (0-9)
+            // 抽奖开始时，关闭待机动画，进入高能状态
+            statusText.style.display = 'none';
+            machineWrapper.style.animation = 'none'; // 停止缓慢呼吸
+            gsap.to(machineWrapper, {boxShadow: "0 20px 50px rgba(0,0,0,0.9), inset 0 0 0 4px #4a0000, inset 0 0 0 8px #ffd700", duration: 0.3});
+
             const randomRealNums = [
                 Math.floor(Math.random() * 10),
                 Math.floor(Math.random() * 10),
@@ -338,7 +414,7 @@
             ];
 
             startBtn.disabled = true;
-            startBtn.innerText = "抽 奖 中 ...";
+            startBtn.innerText = "滚 动 中 ...";
             
             audios.fastReel.loop = true;
             audios.fastReel.play().catch(e => {});
@@ -349,33 +425,30 @@
                 document.getElementById('cyl-2')
             ];
 
-            // 基础滚动圈数
             const baseLoops = 15; 
             
-            // 计算每个圆柱体要旋转的总角度
-            // 公式：(圈数 * 360) + (目标数字 * 36度)
-            const angle0 = (baseLoops * 360) + (randomRealNums[0] * anglePerFace);
-            const angle1 = ((baseLoops + 2) * 360) + (randomRealNums[1] * anglePerFace);
+            // 基于当前角度，计算新的目标角度
+            // 确保动画是基于上次的结果继续旋转，而不是归零重来
+            const angle0 = currentAngles[0] + (baseLoops * 360) + ((randomRealNums[0] * anglePerFace) - (currentAngles[0] % 360) + 360) % 360;
+            const angle1 = currentAngles[1] + ((baseLoops + 2) * 360) + ((randomRealNums[1] * anglePerFace) - (currentAngles[1] % 360) + 360) % 360;
             
-            // 个位数（第三个数字）的极限拉扯计算
             const loops3 = baseLoops + 4;
-            const realAngle2 = (loops3 * 360) + (randomRealNums[2] * anglePerFace);
+            const realAngle2 = currentAngles[2] + (loops3 * 360) + ((randomRealNums[2] * anglePerFace) - (currentAngles[2] % 360) + 360) % 360;
             
-            // 核心灵魂：假动作角度永远比真实角度多转一格（+36度）。
-            // 无论真实数字抽到几（哪怕是9），多转36度就能在视觉上完美呈现出“滚过头一格”的效果，
-            // 然后倒退时正好减去36度，暴力退回真实数字！
+            // 假动作：永远多转一格
             const fakeAngle2 = realAngle2 + anglePerFace; 
 
             const tl = gsap.timeline();
 
-            // 启动后仰蓄力
-            tl.to(cyls, { rotationX: -20, duration: 0.3, ease: "power1.inOut" });
+            // 机器整体后座力反馈 (代替原来的纯圆柱体后仰，现在整个机器外壳一起动)
+            tl.to(machineWrapper, { y: 20, rotationX: 8, duration: 0.1, ease: "power2.in" })
+              .to(machineWrapper, { y: 0, rotationX: 5, duration: 0.3, ease: "back.out(2)" });
 
             // 百位定格
             tl.to(cyls[0], {
                 rotationX: angle0, duration: 2.5, ease: "back.out(1.2)",
                 onComplete: () => { audios.stop1.play().catch(e=>{}); }
-            });
+            }, 0);
 
             // 十位定格
             tl.to(cyls[1], {
@@ -385,17 +458,13 @@
                     audios.stop2.play().catch(e=>{}); 
                     audios.struggle.play().catch(e=>{}); 
                 }
-            }, "<0.5");
+            }, 0.5);
 
             // 个位：假动作与暴力反转
-            // A. 极速滚
-            tl.to(cyls[2], { rotationX: fakeAngle2 - 180, duration: 3, ease: "power1.in" }, 0.3);
-            
-            // B. 卡壳摩擦
+            tl.to(cyls[2], { rotationX: fakeAngle2 - 180, duration: 3, ease: "power1.in" }, 0.5);
             tl.to(cyls[2], { rotationX: fakeAngle2 - 72, duration: 1.5, ease: "power2.inOut" }); 
             tl.to(cyls[2], { rotationX: fakeAngle2 - 36, duration: 2, ease: "power1.inOut" });   
             
-            // C. 完美假停顿（停在多转一格的位置）
             tl.to(cyls[2], { 
                 rotationX: fakeAngle2, 
                 duration: 1.5, 
@@ -406,32 +475,36 @@
                 }
             });
 
-            // 屏息停顿 2 秒
             tl.to({}, { duration: 2 });
 
-            // 巅峰暴力反转：极其生硬地减去36度，退回真实中奖号码！
             tl.to(cyls[2], {
                 rotationX: realAngle2, 
                 duration: 0.1,        
                 ease: "back.out(4)",  
-                onStart: () => { audios.snapBack.play().catch(e=>{}); },
+                onStart: () => { 
+                    audios.snapBack.play().catch(e=>{}); 
+                    // 机器暴击震动
+                    gsap.fromTo(machineWrapper, 
+                        {x: -15, y: 15}, 
+                        {x: 0, y: 0, duration: 0.4, ease: "elastic.out(1, 0.2)"}
+                    );
+                },
                 onComplete: () => {
                     audios.win.play().catch(e=>{});
                     triggerWinEffects();
-                    // 状态重置
+                    
+                    // 保存当前角度，留给下一次抽奖
+                    currentAngles = [angle0, angle1, realAngle2];
+
                     setTimeout(() => {
-                        startBtn.innerText = "重 新 抽 奖";
+                        startBtn.innerText = "开 始 抽 奖";
                         startBtn.disabled = false;
                         isSpinning = false;
-                        
-                        // 为了下一次能继续往上转，我们把当前角度重置为基础数字的角度（去掉圈数带来的大数值）
-                        gsap.set(cyls[0], {rotationX: randomRealNums[0] * anglePerFace});
-                        gsap.set(cyls[1], {rotationX: randomRealNums[1] * anglePerFace});
-                        gsap.set(cyls[2], {rotationX: randomRealNums[2] * anglePerFace});
-                        
-                        // 解绑上次的点击，并重新绑定页面刷新（或者你可以改成不刷新，直接再次执行动画）
-                        startBtn.onclick = () => location.reload();
-                    }, 1000);
+                        // 恢复待机动画
+                        statusText.style.display = 'block';
+                        statusText.innerText = "SYSTEM READY // 等待下一次抽奖...";
+                        machineWrapper.style.animation = 'machine-breathe 6s ease-in-out infinite, neon-pulse 3s infinite alternate';
+                    }, 2000);
                 }
             });
         });
