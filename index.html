@@ -1,259 +1,374 @@
 <!DOCTYPE html>
-<html lang="zh">
+<html lang="zh-CN">
+
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>马大灯笼节 - 极致视觉抽奖</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>马大灯笼节 - 幸运抽奖</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <style>
+        @import url('https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=Cinzel:wght@900&display=swap');
+
         :root {
-            --bg-dark: #2a0404;
-            --bg-center: #5e0b0b;
-            --gold-light: #FBEA9D;
-            --gold-mid: #D4AF37;
-            --gold-dark: #997A15;
-            --text-gold: linear-gradient(to bottom, #FFF3C4, #D4AF37, #997A15);
-            --machine-bg: linear-gradient(145deg, #3a0808, #1a0202);
+            --primary-gold: #ffdd44;
+            --primary-red: #ff3333;
+            --gold-dark: #b8860b;
         }
 
-        body {
-            margin: 0;
-            height: 100vh;
-            /* 典雅的绛红色径向渐变背景 */
-            background: radial-gradient(circle at 50% 30%, var(--bg-center) 0%, var(--bg-dark) 80%);
-            font-family: "STKaiti", "KaiTi", "楷体", "Microsoft YaHei", serif;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            overflow: hidden;
-            perspective: 1200px;
+        html, body {
+            width: 100%; height: 100%; margin: 0; padding: 0; overflow: hidden;
+            position: fixed; top: 0; left: 0; background-color: #000;
+            background: radial-gradient(circle at center, #4a0e0e 0%, #1a0505 50%, #000000 100%);
+            font-family: 'Cinzel', serif; color: white;
+            user-select: none; -webkit-user-select: none; cursor: default;
         }
 
-        /* ================= 背景升空的灯笼群 ================= */
-        .lantern-container {
-            position: absolute;
-            top: 0; left: 0; width: 100%; height: 100%;
-            pointer-events: none;
-            z-index: 1;
-            overflow: hidden;
+        /* --- LAYER 1: GOD RAYS (Back) --- */
+        .god-rays {
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            width: 150vmax; height: 150vmax;
+            background: repeating-conic-gradient(rgba(255, 235, 150, 0.15) 0deg, rgba(255, 235, 150, 0.15) 15deg, transparent 15deg, transparent 30deg);
+            box-shadow: 0 0 100px 80px rgba(255, 200, 50, 0.2);
+            mix-blend-mode: screen; animation: rotateRays 60s linear infinite;
+            z-index: 1; pointer-events: none;
+        }
+        @keyframes rotateRays { from { transform: translate(-50%, -50%) rotate(0deg); } to { transform: translate(-50%, -50%) rotate(360deg); } }
+        .god-rays.pulsing { animation: rotateRays 60s linear infinite, rayPulse 2s ease-in-out infinite alternate; }
+        @keyframes rayPulse { 0% { opacity: 0.3; filter: brightness(1.0); } 100% { opacity: 0.8; filter: brightness(1.5); } }
+
+        /* --- LAYER 2: LANTERNS (DYNAMIC) --- */
+        #lantern-canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 2; transition: z-index 0.1s step-end; }
+        body.winner-revealed #lantern-canvas { z-index: 25; }
+
+        /* --- LAYER 3: GREY GLASS BACKDROP --- */
+        #glass-backdrop {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(15, 5, 5, 0.8); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+            z-index: 20; opacity: 0; pointer-events: none; transition: opacity 0.6s cubic-bezier(0.25, 1, 0.5, 1);
+        }
+        #glass-backdrop.visible { opacity: 1; }
+
+        /* --- LAYER 4: TEXT CONTENT & SLOT MACHINE --- */
+        .content-layer {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            z-index: 30; opacity: 0; pointer-events: none; transition: opacity 0.4s;
+            perspective: 1200px; /* 为老虎机开启 3D 视角 */
+        }
+        .content-layer.visible { opacity: 1; pointer-events: auto; }
+
+        /* --- LAYER 5: FIREWORKS --- */
+        #firework-canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 40; pointer-events: none; }
+
+        /* --- STYLING (Title & Controls) --- */
+        #main-title {
+            position: absolute; top: 45%; left: 50%; transform: translate(-50%, -50%);
+            text-align: center; z-index: 10; pointer-events: none; padding: 5vh 8vw; width: max-content;
+            background: linear-gradient(145deg, rgba(40, 20, 20, 0.85), rgba(10, 5, 5, 0.95));
+            backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px);
+            border-radius: 24px; border: 1px solid rgba(255, 215, 0, 0.15);
+            box-shadow: 0 30px 60px rgba(0, 0, 0, 0.8); transition: all 0.6s ease;
+        }
+        .title-chinese {
+            font-family: 'Ma Shan Zheng', cursive; font-size: 5vw; color: var(--primary-gold); margin: 0;
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.8), 0 0 40px rgba(255, 160, 0, 0.8); letter-spacing: 12px; white-space: nowrap;
+        }
+        .title-english {
+            font-family: 'Cinzel', serif; font-size: 1.2vw; color: #ffbfbf; letter-spacing: 8px; margin-top: 15px;
+            text-shadow: 0 0 15px rgba(255, 50, 50, 0.8); opacity: 0.95; white-space: nowrap;
         }
 
-        .lantern {
-            position: absolute;
-            width: 45px;
-            height: 55px;
-            background: radial-gradient(ellipse at center, #ff8c00 0%, #d80000 80%);
-            border-radius: 40% 40% 45% 45%;
-            box-shadow: 0 0 30px rgba(255, 69, 0, 0.6), inset 0 0 10px rgba(255, 255, 0, 0.5);
-            bottom: -100px;
-            /* 升空与摇摆动画 */
-            animation: float-up linear infinite, sway ease-in-out infinite alternate;
-        }
-
-        /* 灯笼的顶部和底部木质装饰与流苏 */
-        .lantern::before {
-            content: ''; position: absolute; top: -5px; left: 12px; width: 21px; height: 5px;
-            background: #4a2511; border-radius: 2px;
-        }
-        .lantern::after {
-            content: ''; position: absolute; bottom: -15px; left: 17px; width: 11px; height: 20px;
-            background: repeating-linear-gradient(90deg, #d80000, #d80000 1px, transparent 1px, transparent 2px);
-        }
-
-        @keyframes float-up {
-            0% { transform: translateY(0); opacity: 0; }
-            10% { opacity: 0.8; }
-            90% { opacity: 0.8; }
-            100% { transform: translateY(-110vh); opacity: 0; }
-        }
-        @keyframes sway {
-            0% { margin-left: -20px; }
-            100% { margin-left: 20px; }
-        }
-
-        /* ================= 标题优化 ================= */
-        .title-container {
-            z-index: 10;
-            text-align: center;
-            margin-bottom: 50px;
-            animation: breathe 4s ease-in-out infinite alternate;
-        }
-        @keyframes breathe {
-            0% { transform: scale(1); filter: drop-shadow(0 0 15px rgba(212, 175, 55, 0.2)); }
-            100% { transform: scale(1.02); filter: drop-shadow(0 0 25px rgba(212, 175, 55, 0.5)); }
-        }
+        #controls { position: absolute; bottom: 12%; left: 50%; transform: translateX(-50%); z-index: 40; transition: opacity 0.5s ease; }
         
-        .title {
-            font-size: 5rem;
-            /* 使用行楷或楷体，增加文化底蕴 */
-            font-family: "STXingkai", "华文行楷", "STKaiti", "KaiTi", serif;
-            background: var(--text-gold);
-            background-clip: text;
-            -webkit-background-clip: text;
-            color: transparent;
-            font-weight: normal;
-            letter-spacing: 10px;
-            margin: 0;
-            /* 沉稳的多层阴影，替代廉价的发光 */
-            text-shadow: 
-                2px 4px 4px rgba(0,0,0,0.6),
-                0 0 50px rgba(212, 175, 55, 0.2);
+        button {
+            background: linear-gradient(to bottom, #c0151a, #660000); border: 2px solid rgba(255, 215, 0, 0.6);
+            padding: 15px 70px; font-size: 28px; font-family: 'Ma Shan Zheng', cursive; color: var(--primary-gold);
+            cursor: pointer; border-radius: 50px; box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6);
+            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1); text-shadow: 2px 2px 0px rgba(0, 0, 0, 0.8); letter-spacing: 3px; white-space: nowrap;
+        }
+        button:hover { transform: scale(1.05); box-shadow: 0 0 80px rgba(255, 200, 0, 0.6); }
+        button:active { transform: scale(0.95); }
+        button:disabled { filter: grayscale(1); cursor: not-allowed; opacity: 0.5; transform: none; box-shadow: none; }
+
+        .vignette { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 3; background: radial-gradient(circle, transparent 40%, rgba(0, 0, 0, 0.9) 100%); }
+        
+        #flash {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: white; z-index: 100; pointer-events: none; opacity: 0;
+            transition: opacity 0.8s ease-out; mix-blend-mode: overlay;
         }
 
-        .subtitle {
-            font-family: "Microsoft YaHei", sans-serif;
-            font-size: 1.4rem;
-            color: var(--gold-light);
-            letter-spacing: 18px;
-            margin-top: 5px;
-            opacity: 0.9;
-        }
-
-        /* ================= 机器主体优化 ================= */
+        /* ================= 3D 老虎机核心样式 ================= */
         .machine-wrapper {
-            position: relative;
-            z-index: 10;
-            padding: 40px;
-            background: var(--machine-bg);
-            border-radius: 20px;
-            border: 2px solid #5a1515;
-            box-shadow: 
-                0 40px 80px rgba(0,0,0,0.8),
-                inset 0 0 0 6px var(--bg-dark),
-                inset 0 0 0 10px var(--gold-mid);
-            transform-style: preserve-3d;
-            transform: rotateX(8deg);
+            position: relative; padding: 40px; background: linear-gradient(145deg, rgba(30,10,10,0.95), rgba(10,0,0,0.95));
+            border-radius: 20px; border: 2px solid var(--gold-dark);
+            box-shadow: 0 40px 80px rgba(0,0,0,0.9), inset 0 0 30px rgba(255, 215, 0, 0.1);
+            transform-style: preserve-3d; transform: rotateX(5deg);
         }
-
+        .machine-wrapper::before {
+            content: "天 选 之 人"; position: absolute; top: -20px; left: 50%; transform: translateX(-50%);
+            background: linear-gradient(145deg, #ffd700, #b8860b, #ffd700); color: #2b0000;
+            padding: 5px 30px; font-family: 'Ma Shan Zheng', cursive; font-size: 1.5rem;
+            border-radius: 10px; box-shadow: 0 0 20px rgba(255, 215, 0, 0.5); letter-spacing: 5px;
+        }
         .machine-container {
-            display: flex;
-            gap: 25px;
-            padding: 25px;
-            background: #080000;
-            border-radius: 12px;
-            box-shadow: inset 0 0 50px rgba(0,0,0,1);
+            display: flex; gap: 25px; padding: 20px; background: #000;
+            border-radius: 12px; box-shadow: inset 0 0 50px rgba(0,0,0,1);
         }
-
-        /* 视窗 - 玻璃反光更柔和 */
         .reel-window {
-            width: 140px;
-            height: 190px;
-            background-color: #0d0202;
-            border: 3px solid var(--gold-dark);
-            border-radius: 10px;
-            position: relative;
-            perspective: 800px;
-            overflow: hidden;
-            box-shadow: inset 0 0 15px rgba(212, 175, 55, 0.15);
+            width: 140px; height: 190px; background-color: #0d0202;
+            border: 3px solid var(--gold-dark); border-radius: 10px; position: relative;
+            perspective: 800px; overflow: hidden; box-shadow: inset 0 0 20px rgba(255, 51, 51, 0.2);
         }
-
         .reel-window::after {
             content: ''; position: absolute; top: 0; left: 0; right: 0; height: 40%;
-            background: linear-gradient(to bottom, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0) 100%);
+            background: linear-gradient(to bottom, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 100%);
             border-radius: 8px 8px 0 0; z-index: 20; pointer-events: none;
         }
-
         .reel-shadow {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background: linear-gradient(to bottom, #000 0%, transparent 25%, transparent 75%, #000 100%);
+            background: linear-gradient(to bottom, rgba(0,0,0,0.9) 0%, transparent 25%, transparent 75%, rgba(0,0,0,0.9) 100%);
             pointer-events: none; z-index: 10;
         }
-
-        .cylinder {
-            width: 100%; height: 100%; position: absolute; transform-style: preserve-3d;
-        }
-
+        .cylinder { width: 100%; height: 100%; position: absolute; transform-style: preserve-3d; }
         .face {
-            position: absolute; width: 140px; height: 140px; left: 0; top: 25px; 
+            position: absolute; width: 140px; height: 140px; left: 0; top: 25px;
             display: flex; align-items: center; justify-content: center;
-            font-size: 7rem; font-weight: bold;
-            font-family: 'Arial', sans-serif; /* 数字依然保持清晰的无衬线 */
-            background: linear-gradient(to bottom, #fff, #f0f0f0);
-            background-clip: text; -webkit-background-clip: text; color: transparent;
-            text-shadow: 0 5px 15px rgba(0,0,0,0.8);
-            backface-visibility: hidden;
-        }
-
-        /* ================= 按钮优化 ================= */
-        .controls { margin-top: 60px; z-index: 10; }
-
-        button {
-            padding: 18px 70px;
-            font-size: 2rem;
-            font-family: "STKaiti", "KaiTi", serif;
-            font-weight: bold;
-            background: linear-gradient(to bottom, var(--gold-light), var(--gold-dark));
-            color: var(--bg-dark);
-            border: none;
-            border-radius: 50px;
-            cursor: pointer;
-            box-shadow: 
-                0 8px 0 #7A5C00, 
-                0 15px 30px rgba(0,0,0,0.6);
-            transition: all 0.15s;
-            letter-spacing: 5px;
-        }
-
-        button:hover {
-            transform: translateY(-2px);
-            filter: brightness(1.1);
-            box-shadow: 0 10px 0 #7A5C00, 0 20px 40px rgba(212, 175, 55, 0.4);
-        }
-
-        button:active {
-            transform: translateY(8px);
-            box-shadow: 0 0 0 #7A5C00, 0 5px 10px rgba(0,0,0,0.6);
-        }
-
-        button:disabled {
-            background: #555; color: #aaa; box-shadow: 0 8px 0 #333; cursor: not-allowed;
+            font-size: 7.5rem; font-weight: 900; color: #fff;
+            text-shadow: 0 0 20px var(--primary-gold), 0 0 40px var(--primary-red);
+            backface-visibility: hidden; font-family: 'Cinzel', serif;
         }
     </style>
 </head>
+
 <body>
 
-    <div class="lantern-container" id="lanterns"></div>
+    <audio id="sfx-storm" src="storm.mp3" preload="auto"></audio>
+    <audio id="sfx-boom" src="boom.mp3" preload="auto"></audio>
 
-    <div class="title-container">
-        <h1 class="title">马大灯笼节</h1>
-        <div class="subtitle">终 极 幸 运 抽 奖</div>
+    <div id="flash"></div>
+    <div class="vignette"></div>
+    <div class="god-rays"></div>
+
+    <div id="glass-backdrop"></div>
+    <canvas id="lantern-canvas"></canvas>
+
+    <div id="main-title">
+        <h1 class="title-chinese">马大灯笼节</h1>
+        <div class="title-english">PESTA TANGLUNG UM</div>
+        <div class="title-sub">Grand Lucky Draw</div>
     </div>
 
-    <div class="machine-wrapper" id="machine">
-        <div class="machine-container">
-            <div class="reel-window"><div class="reel-shadow"></div><div class="cylinder" id="cyl-0"></div></div>
-            <div class="reel-window"><div class="reel-shadow"></div><div class="cylinder" id="cyl-1"></div></div>
-            <div class="reel-window"><div class="reel-shadow"></div><div class="cylinder" id="cyl-2"></div></div>
+    <div id="machine-screen" class="content-layer">
+        <div class="machine-wrapper" id="machine">
+            <div class="machine-container">
+                <div class="reel-window"><div class="reel-shadow"></div><div class="cylinder" id="cyl-0"></div></div>
+                <div class="reel-window"><div class="reel-shadow"></div><div class="cylinder" id="cyl-1"></div></div>
+                <div class="reel-window"><div class="reel-shadow"></div><div class="cylinder" id="cyl-2"></div></div>
+            </div>
         </div>
     </div>
 
-    <div class="controls">
-        <button id="start-btn">开 始 抽 奖</button>
+    <canvas id="firework-canvas"></canvas>
+
+    <div id="controls">
+        <button id="ignite-btn" onclick="startDraw()">⚡ 启 动 ⚡</button>
     </div>
 
     <script>
-        // 生成背景漂浮灯笼
-        const lanternContainer = document.getElementById('lanterns');
-        for (let i = 0; i < 15; i++) {
-            let lantern = document.createElement('div');
-            lantern.className = 'lantern';
-            lantern.style.left = `${Math.random() * 90 + 5}%`;
-            // 随机大小、上升速度和摇摆速度
-            lantern.style.transform = `scale(${Math.random() * 0.5 + 0.5})`;
-            lantern.style.animationDuration = `${Math.random() * 10 + 10}s, ${Math.random() * 2 + 2}s`;
-            lantern.style.animationDelay = `${Math.random() * 15}s, 0s`;
-            lanternContainer.appendChild(lantern);
+        // ==========================================
+        // 原始配置与 Canvas 渲染核心 (保留不变)
+        // ==========================================
+        const Config = {
+            totalParticipants: 450,
+            lanternCount: 65,
+            baseSpeed: 1.5,
+            stormMaxSpeed: 30.0,
+            fireworksCount: 60, 
+            confettiCount: 80   
+        };
+
+        const State = {
+            mode: 'IDLE', width: 0, height: 0, globalSpeedMultiplier: 1.0, lastTime: 0
+        };
+
+        const lanternCache = [];
+        const particleCache = []; 
+
+        function preRenderLanterns() {
+            const cacheCount = 12;
+            for (let i = 0; i < cacheCount; i++) {
+                const size = 42 + Math.random() * 26.25;
+                const c = document.createElement('canvas');
+                c.width = size * 3; c.height = size * 4;
+                const ctx = c.getContext('2d');
+                ctx.translate(size * 1.5, size * 1.5);
+                const hue = Math.floor(Math.random() * 40);
+                ctx.shadowBlur = 40; ctx.shadowColor = `hsla(${hue}, 100%, 60%, 0.8)`;
+                const w = size * 0.55; const h = size * 0.75;
+                const grd = ctx.createLinearGradient(-w / 2, -h / 2, w / 2, h / 2);
+                grd.addColorStop(0, `hsla(${hue}, 100%, 70%, 1)`);
+                grd.addColorStop(1, `hsla(${hue}, 100%, 50%, 1)`);
+                ctx.beginPath(); ctx.moveTo(-w / 2, -h / 2); ctx.lineTo(w / 2, -h / 2);
+                ctx.lineTo(w / 3, h / 2); ctx.lineTo(-w / 3, h / 2); ctx.closePath(); ctx.fillStyle = grd; ctx.fill();
+                ctx.shadowBlur = 0; ctx.strokeStyle = "rgba(255, 255, 220, 0.7)"; ctx.lineWidth = 2;
+                ctx.beginPath(); ctx.moveTo(-w / 2, -h / 2); ctx.lineTo(-w / 3, h / 2); ctx.stroke();
+                ctx.beginPath(); ctx.moveTo(w / 2, -h / 2); ctx.lineTo(w / 3, h / 2); ctx.stroke();
+                ctx.shadowBlur = 20; ctx.shadowColor = "#fff";
+                ctx.beginPath(); ctx.arc(0, h / 4, w / 5, 0, Math.PI * 2); ctx.fillStyle = "#fff"; ctx.fill();
+                lanternCache.push({ img: c, width: c.width, height: c.height });
+            }
         }
 
-        // 3D 轮盘构建
+        function preRenderParticles() {
+            const hues = [];
+            for (let i = 0; i <= 20; i += 2) hues.push(i);
+            for (let i = 40; i <= 60; i += 2) hues.push(i);
+            hues.forEach(hue => {
+                const size = 16; 
+                const c = document.createElement('canvas'); c.width = size; c.height = size;
+                const ctx = c.getContext('2d'); const center = size / 2; const radius = size * 0.25; 
+                const grad = ctx.createRadialGradient(center, center, 0, center, center, size / 2);
+                grad.addColorStop(0, `hsla(${hue}, 100%, 70%, 1)`); grad.addColorStop(0.4, `hsla(${hue}, 100%, 50%, 0.8)`); grad.addColorStop(1, `hsla(${hue}, 100%, 50%, 0)`);
+                ctx.fillStyle = grad; ctx.fillRect(0, 0, size, size);
+                ctx.beginPath(); ctx.arc(center, center, radius * 0.6, 0, Math.PI * 2); ctx.fillStyle = "#fff"; ctx.fill();
+                particleCache.push({ img: c, size: size, hue: hue });
+            });
+        }
+
+        class Lantern {
+            constructor() { this.reset(); this.y = Math.random() * State.height; this.swingPhase = Math.random() * Math.PI * 2; }
+            reset() {
+                this.x = Math.random() * State.width; this.y = State.height + Math.random() * 200;
+                this.baseSpeed = Math.random() * 0.5 + 0.5; this.sprite = lanternCache[Math.floor(Math.random() * lanternCache.length)];
+                this.swingPhase = Math.random() * Math.PI * 2; this.swingSpeed = 0.02 + Math.random() * 0.02; this.scale = 0.9 + Math.random() * 0.5;
+            }
+            update(dt) {
+                let speed = this.baseSpeed * State.globalSpeedMultiplier * dt;
+                this.y -= speed;
+                if (State.mode === 'WINNER') { this.swingPhase += this.swingSpeed * 0.1 * dt; } 
+                else { this.swingPhase += this.swingSpeed * dt; this.x += Math.sin(this.swingPhase * 0.5) * 0.2 * dt; }
+                if (this.x > State.width + 50) this.x = -50; if (this.y < -150) this.reset();
+            }
+            draw(ctx) {
+                ctx.translate(this.x, this.y); ctx.rotate(Math.sin(this.swingPhase) * 0.1); ctx.scale(this.scale, this.scale);
+                ctx.drawImage(this.sprite.img, -this.sprite.width / 2, -this.sprite.height / 2);
+                ctx.setTransform(1, 0, 0, 1, 0, 0);
+            }
+        }
+
+        class Particle {
+            constructor(x, y, isConfetti = false) { this.init(x, y, isConfetti); }
+            init(x, y, isConfetti) {
+                this.x = x; this.y = y; this.isConfetti = isConfetti; this.life = 1.0;
+                if (!isConfetti) {
+                    this.maxHistory = 8;
+                    if (!this.historyX) { this.historyX = new Float32Array(this.maxHistory); this.historyY = new Float32Array(this.maxHistory); }
+                    this.historyIdx = 0; this.historyLen = 0;
+                }
+                const angle = Math.random() * Math.PI * 2;
+                if (isConfetti) {
+                    this.vx = (Math.random() - 0.5) * 5; this.vy = (Math.random() - 0.5) * 5 - 5;
+                    this.drag = 0.95; this.gravity = 0.15; this.decay = 0.005; this.size = Math.random() * 5 + 3;
+                    this.color = `hsl(${40 + Math.random() * 20}, 100%, 75%)`; this.rotation = Math.random() * Math.PI; this.rotationSpeed = (Math.random() - 0.5) * 0.2;
+                } else {
+                    const speed = Math.random() * 18 + 12; 
+                    this.vx = Math.cos(angle) * speed; this.vy = Math.sin(angle) * speed;
+                    this.drag = 0.92; this.gravity = 0.15; this.decay = Math.random() * 0.015 + 0.01;
+                    this.sprite = particleCache[Math.floor(Math.random() * particleCache.length)];
+                    this.size = this.sprite.size * (0.8 + Math.random() * 0.4); 
+                    this.color = `hsl(${this.sprite.hue}, 100%, 70%)`;
+                }
+            }
+            update(dt) {
+                if (!this.isConfetti) {
+                    this.historyX[this.historyIdx] = this.x; this.historyY[this.historyIdx] = this.y;
+                    this.historyIdx = (this.historyIdx + 1) & 7; if (this.historyLen < this.maxHistory) this.historyLen++;
+                }
+                this.x += this.vx * dt; this.y += this.vy * dt; this.vx *= this.drag; this.vy *= this.drag; this.vy += this.gravity * dt;
+                this.life -= this.decay * dt; if (this.isConfetti) this.rotation += this.rotationSpeed * dt;
+            }
+            draw(ctx) {
+                const alpha = Math.max(0, this.life); ctx.globalAlpha = alpha;
+                if (this.isConfetti) {
+                    ctx.fillStyle = this.color; const c = Math.cos(this.rotation); const s = Math.sin(this.rotation);
+                    ctx.setTransform(c, s, -s, c, (this.x | 0), (this.y | 0)); ctx.fillRect(-this.size / 2, -this.size / 2, this.size, this.size);
+                    ctx.setTransform(1, 0, 0, 1, 0, 0);
+                } else {
+                    if (this.historyLen > 1) {
+                        ctx.beginPath(); let startIdx = (this.historyIdx - this.historyLen + 8) & 7;
+                        ctx.moveTo((this.historyX[startIdx] | 0), (this.historyY[startIdx] | 0));
+                        for (let i = 1; i < this.historyLen; i++) { let currIdx = (startIdx + i) & 7; ctx.lineTo((this.historyX[currIdx] | 0), (this.historyY[currIdx] | 0)); }
+                        ctx.lineTo((this.x | 0), (this.y | 0)); ctx.lineWidth = this.size * 0.15; ctx.strokeStyle = this.color; ctx.stroke();
+                    }
+                    const offset = this.size / 2; ctx.drawImage(this.sprite.img, (this.x - offset) | 0, (this.y - offset) | 0, this.size, this.size);
+                }
+                ctx.globalAlpha = 1.0;
+            }
+        }
+
+        const lCanvas = document.getElementById('lantern-canvas'); const lCtx = lCanvas.getContext('2d');
+        const fCanvas = document.getElementById('firework-canvas'); const fCtx = fCanvas.getContext('2d');
+        const lanterns = []; let particles = []; const particlePool = []; 
+
+        function init() {
+            resize(); preRenderLanterns(); preRenderParticles(); 
+            for (let i = 0; i < Config.lanternCount; i++) lanterns.push(new Lantern());
+            requestAnimationFrame(loop);
+        }
+
+        function resize() {
+            State.width = window.innerWidth; State.height = window.innerHeight;
+            lCanvas.width = State.width; lCanvas.height = State.height; fCanvas.width = State.width; fCanvas.height = State.height;
+            lCtx.globalCompositeOperation = 'lighter'; fCtx.globalCompositeOperation = 'lighter'; fCtx.lineCap = 'round';
+        }
+        window.addEventListener('resize', resize);
+
+        function loop(timestamp) {
+            if (!State.lastTime) State.lastTime = timestamp;
+            const deltaTime = (timestamp - State.lastTime) / 16.67; State.lastTime = timestamp; const dt = Math.min(deltaTime, 3.0);
+
+            let targetMultiplier = 1.0;
+            if (State.mode === 'STORM') targetMultiplier = Config.stormMaxSpeed;
+            if (State.mode === 'WINNER') targetMultiplier = 0.5; 
+            State.globalSpeedMultiplier += (targetMultiplier - State.globalSpeedMultiplier) * 0.05 * dt;
+
+            lCtx.clearRect(0, 0, State.width, State.height);
+            for (let i = 0; i < lanterns.length; i++) { lanterns[i].update(dt); lanterns[i].draw(lCtx); }
+
+            if (particles.length > 0) {
+                fCtx.clearRect(0, 0, State.width, State.height);
+                let i = 0;
+                while (i < particles.length) {
+                    const p = particles[i]; p.update(dt); p.draw(fCtx);
+                    if (p.life <= 0) { particlePool.push(p); particles[i] = particles[particles.length - 1]; particles.pop(); } 
+                    else { i++; }
+                }
+            }
+            requestAnimationFrame(loop);
+        }
+
+        // ==========================================
+        // 老虎机 3D 构建与 GSAP 核心逻辑
+        // ==========================================
+        const els = {
+            glass: document.getElementById('glass-backdrop'),
+            machineScreen: document.getElementById('machine-screen'),
+            machineWrapper: document.getElementById('machine'),
+            igniteBtn: document.getElementById('ignite-btn'),
+            title: document.getElementById('main-title'),
+            flash: document.getElementById('flash'),
+            godRays: document.querySelector('.god-rays')
+        };
+        const sfxStorm = document.getElementById('sfx-storm');
+        const sfxBoom = document.getElementById('sfx-boom');
+
         const numFaces = 10;
         const anglePerFace = 360 / numFaces; 
-        const radius = Math.round((140 / 2) / Math.tan(Math.PI / numFaces)); 
+        const radius = Math.round((140 / 2) / Math.tan(Math.PI / numFaces)); // 约 215px
 
         function buildCylinder(cylinderId) {
             const cyl = document.getElementById(`cyl-${cylinderId}`);
+            cyl.innerHTML = '';
             gsap.set(cyl, { z: -radius });
             for (let i = 0; i < numFaces; i++) {
                 const face = document.createElement('div');
@@ -262,96 +377,133 @@
                 cyl.appendChild(face);
             }
         }
-        [0, 1, 2].forEach(buildCylinder);
+        buildCylinder(0); buildCylinder(1); buildCylinder(2);
 
         let currentAngles = [0, 0, 0];
-        const startBtn = document.getElementById('start-btn');
-        const machineWrapper = document.getElementById('machine');
         let isSpinning = false;
 
-        startBtn.addEventListener('click', () => {
+        function startDraw() {
             if (isSpinning) return;
             isSpinning = true;
-            startBtn.disabled = true; startBtn.innerText = "祈 福 中 ...";
 
-            const randomRealNums = [
-                Math.floor(Math.random() * 10),
-                Math.floor(Math.random() * 10),
-                Math.floor(Math.random() * 10)
-            ];
+            // 1. UI 切换 (标题模糊，老虎机显现)
+            els.igniteBtn.disabled = true;
+            els.igniteBtn.innerText = "祈 福 中 ...";
+            els.title.style.opacity = '0';
+            els.title.style.transform = 'translate(-50%, -50%) scale(0.8)';
+            
+            els.godRays.classList.add('pulsing');
+            els.glass.classList.add('visible');
+            els.machineScreen.classList.add('visible');
+            
+            try { sfxStorm.currentTime = 0; sfxStorm.play(); } catch (e) { }
+            State.mode = 'STORM'; // 灯笼狂飙
+
+            // 2. 生成完全随机的 3 位中奖数字
+            const targetStr = Math.floor(Math.random() * Config.totalParticipants).toString().padStart(3, '0');
+            const targetNums = [parseInt(targetStr[0]), parseInt(targetStr[1]), parseInt(targetStr[2])];
 
             const cyls = [document.getElementById('cyl-0'), document.getElementById('cyl-1'), document.getElementById('cyl-2')];
             const baseLoops = 15; 
             
-            const angle0 = currentAngles[0] + (baseLoops * 360) + ((randomRealNums[0] * anglePerFace) - (currentAngles[0] % 360) + 360) % 360;
-            const angle1 = currentAngles[1] + ((baseLoops + 2) * 360) + ((randomRealNums[1] * anglePerFace) - (currentAngles[1] % 360) + 360) % 360;
-            const realAngle2 = currentAngles[2] + ((baseLoops + 4) * 360) + ((randomRealNums[2] * anglePerFace) - (currentAngles[2] % 360) + 360) % 360;
-            const fakeAngle2 = realAngle2 + anglePerFace; // 假动作多转一格
+            // 计算目标角度
+            const angle0 = currentAngles[0] + (baseLoops * 360) + ((targetNums[0] * anglePerFace) - (currentAngles[0] % 360) + 360) % 360;
+            const angle1 = currentAngles[1] + ((baseLoops + 2) * 360) + ((targetNums[1] * anglePerFace) - (currentAngles[1] % 360) + 360) % 360;
+            const realAngle2 = currentAngles[2] + ((baseLoops + 4) * 360) + ((targetNums[2] * anglePerFace) - (currentAngles[2] % 360) + 360) % 360;
+            
+            // 🔥 核心：假动作多转一格 🔥
+            const fakeAngle2 = realAngle2 + anglePerFace; 
 
             const tl = gsap.timeline();
 
-            // 1. 百位和十位正常定格
+            // 3. 时间线动画
+            // 机器整体后座力反馈
+            tl.to(els.machineWrapper, { y: 20, rotationX: 10, duration: 0.1, ease: "power2.in" })
+              .to(els.machineWrapper, { y: 0, rotationX: 5, duration: 0.3, ease: "back.out(2)" });
+
+            // 百位定格
             tl.to(cyls[0], { rotationX: angle0, duration: 2.5, ease: "back.out(1.2)" }, 0);
+            // 十位定格
             tl.to(cyls[1], { rotationX: angle1, duration: 4, ease: "back.out(1.2)" }, 0.5);
 
-            // 2. 个位艰难爬向假号码
+            // 个位：狂飙 -> 减速 -> 稳停假动作
             tl.to(cyls[2], { rotationX: fakeAngle2 - 180, duration: 3, ease: "power1.in" }, 0.5);
             tl.to(cyls[2], { rotationX: fakeAngle2 - 36, duration: 2.5, ease: "power2.inOut" });   
+            tl.to(cyls[2], { rotationX: fakeAngle2, duration: 1.5, ease: "power4.out" });
             
-            // 3. 稳稳地停在假号码上（持续 1.5 秒的心理战）
-            tl.to(cyls[2], { 
-                rotationX: fakeAngle2, 
-                duration: 1.5, 
-                ease: "power4.out"
-            });
-            tl.to({}, { duration: 1.5 }); // 屏息时刻
+            // 屏息时刻
+            tl.to({}, { duration: 1.5 }); 
 
-            // 4. 🔥 史诗级反转优化 🔥
-            // A. 蓄力预判：齿轮像是不堪重负，还想往前挣扎一点点（微微增加 12 度角度）
-            tl.to(cyls[2], {
-                rotationX: fakeAngle2 + 12,
-                duration: 0.4,
-                ease: "power1.inOut"
-            });
-
-            // B. 沉重滑落：失去抓地力，重重砸回真实的号码，并伴随弹簧余震
+            // 🔥 史诗级反转：蓄力预判 -> 沉重回弹
+            tl.to(cyls[2], { rotationX: fakeAngle2 + 12, duration: 0.4, ease: "power1.inOut" });
             tl.to(cyls[2], {
                 rotationX: realAngle2, 
-                duration: 0.8,        // 时间拉长，告别 0.1秒的僵硬瞬移
-                ease: "elastic.out(1.2, 0.4)", // 完美的机械弹簧阻尼回弹效果
+                duration: 0.8,        
+                ease: "elastic.out(1.2, 0.4)", // 机械阻尼感
                 onStart: () => {
-                    // 机器整体伴随一次重击震动反馈
-                    gsap.fromTo(machineWrapper, 
+                    // 机器伴随重击震动
+                    gsap.fromTo(els.machineWrapper, 
                         {y: 20, rotationX: 12}, 
-                        {y: 0, rotationX: 8, duration: 0.6, ease: "elastic.out(1.5, 0.3)"}
+                        {y: 0, rotationX: 5, duration: 0.6, ease: "elastic.out(1.5, 0.3)"}
                     );
+                    // 触发你原版 OC 里的闪光和打雷音效
+                    els.flash.style.opacity = '1';
+                    try { sfxStorm.pause(); sfxBoom.currentTime = 0; sfxBoom.play(); } catch (e) { }
                 },
                 onComplete: () => {
-                    triggerWinEffects();
+                    els.godRays.classList.remove('pulsing');
+                    els.flash.style.opacity = '0';
+                    State.mode = 'WINNER'; // 灯笼进入慢速模式
+                    document.body.classList.add('winner-revealed');
+
+                    // 触发你原版 OC 里的 Canvas 烟花爆炸
+                    spawnExplosion(State.width / 2, State.height / 2, true);
+                    setTimeout(() => spawnExplosion(State.width / 2 - 300, State.height / 2, false), 200);
+                    setTimeout(() => spawnExplosion(State.width / 2 + 300, State.height / 2, false), 400);
+
+                    // 保存角度以便下次连续滚动
                     currentAngles = [angle0, angle1, realAngle2];
+                    
+                    // UI 重置为下一轮做准备
                     setTimeout(() => {
-                        startBtn.innerText = "开 始 抽 奖";
-                        startBtn.disabled = false;
+                        els.igniteBtn.innerText = "下 一 位";
+                        els.igniteBtn.disabled = false;
+                        
+                        // 点击“下一位”执行复位逻辑
+                        els.igniteBtn.onclick = resetDraw;
                         isSpinning = false;
                     }, 2000);
                 }
             });
-        });
-
-        function triggerWinEffects() {
-            var end = Date.now() + 5000;
-            (function frame() {
-                confetti({
-                    particleCount: 8, angle: 60, spread: 80, origin: { x: 0, y: 0.7 },
-                    colors: ['#D4AF37', '#ff1a1a', '#FBEA9D'], shapes: ['circle'] 
-                });
-                confetti({
-                    particleCount: 8, angle: 120, spread: 80, origin: { x: 1, y: 0.7 },
-                    colors: ['#D4AF37', '#ff1a1a', '#FBEA9D'], shapes: ['circle']
-                });
-                if (Date.now() < end) requestAnimationFrame(frame);
-            }());
         }
+
+        // 重新开始准备状态
+        function resetDraw() {
+            document.body.classList.remove('winner-revealed');
+            els.machineScreen.classList.remove('visible');
+            els.glass.classList.remove('visible'); 
+            els.title.style.opacity = '1';
+            els.title.style.transform = 'translate(-50%, -50%) scale(1)';
+            
+            els.igniteBtn.innerText = "⚡ 启 动 ⚡";
+            els.igniteBtn.onclick = startDraw;
+
+            State.mode = 'IDLE';
+            particles = []; // 清理残留烟花
+        }
+
+        function spawnExplosion(x, y, includeConfetti) {
+            function spawn(isConfetti) {
+                let p;
+                if (particlePool.length > 0) { p = particlePool.pop(); p.init(x, y, isConfetti); } 
+                else { p = new Particle(x, y, isConfetti); }
+                particles.push(p);
+            }
+            for (let i = 0; i < Config.fireworksCount; i++) { spawn(false); }
+            if (includeConfetti) { for (let i = 0; i < Config.confettiCount; i++) { spawn(true); } }
+        }
+
+        init();
     </script>
 </body>
 </html>
