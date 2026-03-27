@@ -1,844 +1,354 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
-
+<html lang="zh">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>马大灯笼节 - 幸运抽奖</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>马大灯笼节 - 极限反转抽奖</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=Cinzel:wght@900&display=swap');
-
         :root {
-            --primary-gold: #ffdd44;
-            --primary-red: #ff3333;
+            --bg-color: #4a0404; /* 暗红舞台背景 */
+            --gold: #d4af37;     /* 烫金装饰 */
+            --slot-bg: #1a1a1a;
+            --text-glow: 0 0 10px rgba(212, 175, 55, 0.8);
         }
 
-        html,
         body {
-            width: 100%;
-            height: 100%;
             margin: 0;
             padding: 0;
-            overflow: hidden;
-            position: fixed;
-            top: 0;
-            left: 0;
-            background-color: #000;
-            background: radial-gradient(circle at center, #4a0e0e 0%, #1a0505 50%, #000000 100%);
-            font-family: 'Cinzel', serif;
-            color: white;
-            user-select: none;
-            -webkit-user-select: none;
-            cursor: default;
-        }
-
-        /* --- LAYER 1: GOD RAYS (Back) --- */
-        .god-rays {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: 150vmax;
-            height: 150vmax;
-            background: repeating-conic-gradient(rgba(255, 235, 150, 0.15) 0deg,
-                    rgba(255, 235, 150, 0.15) 15deg,
-                    transparent 15deg, transparent 30deg);
-            box-shadow: 0 0 100px 80px rgba(255, 200, 50, 0.2);
-            mix-blend-mode: screen;
-            animation: rotateRays 60s linear infinite;
-            z-index: 1;
-            pointer-events: none;
-        }
-
-        @keyframes rotateRays {
-            from {
-                transform: translate(-50%, -50%) rotate(0deg);
-            }
-
-            to {
-                transform: translate(-50%, -50%) rotate(360deg);
-            }
-        }
-
-        .god-rays.pulsing {
-            animation: rotateRays 60s linear infinite, rayPulse 2s ease-in-out infinite alternate;
-        }
-
-        @keyframes rayPulse {
-            0% {
-                opacity: 0.3;
-                filter: brightness(1.0);
-            }
-
-            100% {
-                opacity: 0.8;
-                filter: brightness(1.5);
-            }
-        }
-
-        /* --- LAYER 2: LANTERNS (DYNAMIC) --- */
-        #lantern-canvas {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            pointer-events: none;
-            z-index: 2;
-            /* Default: Low */
-            transition: z-index 0.1s step-end;
-        }
-
-        /* When revealing, move lanterns BETWEEN Glass(20) and Text(30) */
-        body.winner-revealed #lantern-canvas {
-            z-index: 25;
-        }
-
-        /* --- LAYER 3: GREY GLASS BACKDROP (Independent Layer) --- */
-        #glass-backdrop {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(5, 5, 5, 0.75);
-            backdrop-filter: blur(10px);
-            z-index: 20;
-            opacity: 0;
-            pointer-events: none;
-            transition: opacity 0.4s cubic-bezier(0.25, 1, 0.5, 1);
-        }
-
-        #glass-backdrop.visible {
-            opacity: 1;
-        }
-
-        /* --- LAYER 4: TEXT CONTENT (Top Layer) --- */
-        /* This container holds the text and button, placed HIGHER than everything else */
-        .content-layer {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
+            background-color: var(--bg-color);
+            background-image: radial-gradient(circle, #7a0808 0%, #2b0000 100%);
+            color: var(--gold);
+            font-family: 'Courier New', Courier, monospace;
             display: flex;
             flex-direction: column;
-            justify-content: center;
             align-items: center;
-            z-index: 30;
-            /* Crucial: Higher than lanterns (25) */
-            opacity: 0;
-            pointer-events: none;
-            transition: opacity 0.4s;
+            justify-content: center;
+            height: 100vh;
+            overflow: hidden;
         }
 
-        .content-layer.visible {
-            opacity: 1;
-            pointer-events: auto;
+        .title {
+            font-size: 3rem;
+            margin-bottom: 30px;
+            text-shadow: var(--text-glow);
+            letter-spacing: 5px;
+            font-weight: bold;
         }
 
-        /* --- LAYER 5: FIREWORKS (Explosions on top) --- */
-        #firework-canvas {
+        /* 老虎机主体 */
+        .slot-machine {
+            display: flex;
+            gap: 20px;
+            background: linear-gradient(145deg, #2a0000, #5a0000);
+            padding: 30px;
+            border: 5px solid var(--gold);
+            border-radius: 15px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.5), inset 0 0 20px rgba(0,0,0,0.8);
+            position: relative;
+        }
+
+        /* 单个数字框 */
+        .reel-container {
+            width: 120px;
+            height: 160px;
+            background-color: var(--slot-bg);
+            border: 3px solid #8b6508;
+            border-radius: 10px;
+            overflow: hidden;
+            position: relative;
+            box-shadow: inset 0 10px 20px rgba(0,0,0,0.8);
+        }
+
+        /* 顶部和底部的渐变阴影，增加滚轮的立体感 */
+        .reel-container::before, .reel-container::after {
+            content: '';
             position: absolute;
-            top: 0;
             left: 0;
             width: 100%;
-            height: 100%;
-            z-index: 40;
-            pointer-events: none;
+            height: 30px;
+            z-index: 2;
+        }
+        .reel-container::before {
+            top: 0;
+            background: linear-gradient(to bottom, rgba(26,26,26,1) 0%, rgba(26,26,26,0) 100%);
+        }
+        .reel-container::after {
+            bottom: 0;
+            background: linear-gradient(to top, rgba(26,26,26,1) 0%, rgba(26,26,26,0) 100%);
         }
 
-        /* --- STYLING --- */
-        #main-title {
-            position: absolute;
-            top: 45%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            text-align: center;
-            z-index: 10;
-            pointer-events: none;
-            padding: 5vh 8vw;
-            width: max-content;
-            background: linear-gradient(145deg, rgba(40, 40, 40, 0.85), rgba(10, 10, 10, 0.95));
-            backdrop-filter: blur(25px);
-            -webkit-backdrop-filter: blur(25px);
-            border-radius: 24px;
-            border: 1px solid rgba(255, 255, 255, 0.15);
-            box-shadow: 0 30px 60px rgba(0, 0, 0, 0.8);
+        /* 数字长条 */
+        .strip {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+            /* 初始状态模糊，由 JS 控制 */
         }
 
-        .title-chinese {
-            font-family: 'Ma Shan Zheng', cursive;
-            font-size: 5vw;
-            color: var(--primary-gold);
-            margin: 0;
-            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.8), 0 0 40px rgba(255, 160, 0, 0.8);
-            letter-spacing: 12px;
-            white-space: nowrap;
-        }
-
-        .title-english {
-            font-family: 'Cinzel', serif;
-            font-size: 1.2vw;
-            color: #ffbfbf;
-            letter-spacing: 8px;
-            margin-top: 15px;
-            text-shadow: 0 0 15px rgba(255, 50, 50, 0.8);
-            opacity: 0.95;
-            white-space: nowrap;
-        }
-
-        .title-sub {
-            margin-top: 15px;
-            font-size: 0.8vw;
-            color: rgba(255, 255, 255, 0.6);
-            letter-spacing: 4px;
-            text-transform: uppercase;
-        }
-
-        /* Scramble Text */
-        #scramble-text {
-            font-family: 'Cinzel', serif;
-            font-weight: 900;
-            font-size: 15vw;
+        .number {
+            height: 160px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 6rem;
+            font-weight: bold;
             color: #fff;
-            line-height: 1;
-            font-variant-numeric: tabular-nums;
-            text-shadow: 0 0 80px rgba(255, 200, 0, 1.0);
-            will-change: transform;
+            text-shadow: 0 0 15px rgba(255,255,255,0.5);
         }
 
-        .scrambling #scramble-text {
-            animation: pulse-zoom 0.1s infinite alternate;
-            color: #fffbe6;
+        /* 高速滚动时的视觉模糊类 */
+        .blur-effect {
+            filter: blur(4px) drop-shadow(0 0 10px rgba(255,255,255,0.8));
         }
 
-        @keyframes pulse-zoom {
-            0% {
-                transform: scale(0.95);
-            }
-
-            100% {
-                transform: scale(1.05);
-            }
-        }
-
-        /* Winner Text */
-        .winner-label {
-            font-family: 'Ma Shan Zheng', cursive;
-            font-size: 5vw;
-            color: var(--primary-gold);
-            text-shadow: 0 0 30px #ff3333;
-            letter-spacing: 0.5rem;
-            margin-bottom: 2vh;
-            animation: floatText 3s ease-in-out infinite;
-        }
-
-        .winner-number {
-            font-family: 'Cinzel', serif;
-            font-weight: 900;
-            font-size: 18vw;
-            color: #fff;
-            text-shadow: 0 0 30px var(--primary-gold), 0 0 100px #ff0000;
-            line-height: 1;
-        }
-
-        .number-pop {
-            animation: superSlam 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
-        }
-
-        @keyframes superSlam {
-            0% {
-                transform: scale(2.0);
-                opacity: 0;
-                filter: blur(10px);
-            }
-
-            100% {
-                transform: scale(1);
-                opacity: 1;
-                filter: blur(0px);
-            }
-        }
-
-        @keyframes floatText {
-
-            0%,
-            100% {
-                transform: translateY(0);
-            }
-
-            50% {
-                transform: translateY(-10px);
-            }
-        }
-
-        #controls {
-            position: absolute;
-            bottom: 12%;
-            left: 50%;
-            transform: translateX(-50%);
-            z-index: 10;
-            transition: opacity 0.5s ease;
+        .controls {
+            margin-top: 50px;
         }
 
         button {
-            background: linear-gradient(to bottom, #c0151a, #660000);
-            border: 1px solid rgba(255, 215, 0, 0.4);
-            padding: 15px 70px;
-            font-size: 28px;
-            font-family: 'Ma Shan Zheng', cursive;
-            color: var(--primary-gold);
-            cursor: pointer;
+            padding: 15px 40px;
+            font-size: 1.5rem;
+            font-weight: bold;
+            background: linear-gradient(to bottom, #d4af37, #b8860b);
+            color: #2b0000;
+            border: none;
             border-radius: 50px;
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6);
-            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
-            text-shadow: 2px 2px 0px rgba(0, 0, 0, 0.8);
-            letter-spacing: 3px;
-            white-space: nowrap;
+            cursor: pointer;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+            transition: transform 0.1s, filter 0.2s;
         }
 
         button:hover {
-            transform: scale(1.05);
-            box-shadow: 0 0 80px rgba(255, 200, 0, 0.6);
+            filter: brightness(1.2);
+            transform: translateY(-2px);
         }
 
         button:active {
-            transform: scale(0.95);
+            transform: translateY(2px);
+            box-shadow: 0 2px 5px rgba(0,0,0,0.5);
         }
 
-        .vignette {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            pointer-events: none;
-            z-index: 3;
-            background: radial-gradient(circle, transparent 40%, rgba(0, 0, 0, 0.9) 100%);
-        }
-
-        #flash {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: white;
-            z-index: 100;
-            pointer-events: none;
-            opacity: 0;
-            transition: opacity 0.8s ease-out;
-            mix-blend-mode: overlay;
+        button:disabled {
+            background: #555;
+            color: #888;
+            cursor: not-allowed;
+            transform: none;
         }
     </style>
 </head>
-
 <body>
 
-    <audio id="sfx-storm" src="storm.mp3" preload="auto"></audio>
-    <audio id="sfx-boom" src="boom.mp3" preload="auto"></audio>
+    <div class="title">灯笼节幸运抽奖</div>
 
-    <div id="flash"></div>
-    <div class="vignette"></div>
-    <div class="god-rays"></div>
-
-    <div id="glass-backdrop"></div>
-
-    <canvas id="lantern-canvas"></canvas>
-
-    <div id="main-title">
-        <h1 class="title-chinese">马大灯笼节</h1>
-        <div class="title-english">PESTA TANGLUNG UM</div>
-        <div class="title-sub">Grand Lucky Draw</div>
+    <div class="slot-machine">
+        <div class="reel-container"><div class="strip" id="strip-0"></div></div>
+        <div class="reel-container"><div class="strip" id="strip-1"></div></div>
+        <div class="reel-container"><div class="strip" id="strip-2"></div></div>
     </div>
 
-    <div id="scramble-screen" class="content-layer">
-        <div id="scramble-text">000</div>
-    </div>
-
-    <div id="winner-screen" class="content-layer">
-        <div class="winner-label">✨ 天选之人 ✨</div>
-        <div class="winner-number" id="result-text">---</div>
-        <button style="margin-top: 5vh; font-size: 24px; padding: 12px 50px;" onclick="resetDraw()">下一位</button>
-    </div>
-
-    <canvas id="firework-canvas"></canvas>
-
-    <div id="controls">
-        <button id="ignite-btn" onclick="startDraw()">⚡ 启 动 ⚡</button>
+    <div class="controls">
+        <button id="start-btn">开始抽奖</button>
     </div>
 
     <script>
-        const Config = {
-            totalParticipants: 450,
-            drawDuration: 4000,
-            lanternCount: 65,
-            baseSpeed: 1.5,
-            stormMaxSpeed: 30.0,
-            fireworksCount: 50, // Reduced from 80
-            confettiCount: 50   // Reduced from 150
+        // ==========================================
+        // 配置区域 (Configuration)
+        // ==========================================
+        
+        // 1. 设定中奖号码和假动作号码
+        const actualWinningNumber = [1, 2, 7]; // 真实中奖号码 (127)
+        // 假动作：前两位一样，最后一位故意错开一格 (比如停在 8，然后倒退回 7)
+        const fakePeakNumber = [1, 2, 8];      
+
+        // 2. 音效文件占位符 (请在同级目录下放入真实的 MP3 文件)
+        // 如果没有文件，浏览器控制台会报错，但动画依然会执行
+        const audioSources = { 
+            reel: 'fast_reel.mp3',       // 高速齿轮转动声
+            stop1: 'clack.mp3',          // 百位卡死“啪”声
+            stop2: 'dong.mp3',           // 十位卡死“咚”声
+            slowPulse: 'heartbeat.mp3',  // 越来越慢的心跳/滴答声
+            fakeStop: 'pause.mp3',       // 假动作停顿音效
+            snapBack: 'glitch.mp3',      // 卡带/弹簧断裂音效
+            win: 'fanfare.mp3'           // 爆发中奖音乐
         };
 
-        const State = {
-            mode: 'IDLE',
-            width: 0,
-            height: 0,
-            globalSpeedMultiplier: 1.0,
-            lastTime: 0,
-            drumrollActive: false,
-            lastDrumrollTime: 0
-        };
-
-        // --- ASSETS ---
-        const lanternCache = [];
-        const particleCache = []; // NEW: Sprite Cache for GPU Blitting
-
-        function preRenderLanterns() {
-            const cacheCount = 12;
-            for (let i = 0; i < cacheCount; i++) {
-                const size = 42 + Math.random() * 26.25;
-                const c = document.createElement('canvas');
-                c.width = size * 3; c.height = size * 4;
-                const ctx = c.getContext('2d');
-                ctx.translate(size * 1.5, size * 1.5);
-                const hue = Math.floor(Math.random() * 40);
-
-                ctx.shadowBlur = 40; ctx.shadowColor = `hsla(${hue}, 100%, 60%, 0.8)`;
-                const w = size * 0.55; const h = size * 0.75;
-                const grd = ctx.createLinearGradient(-w / 2, -h / 2, w / 2, h / 2);
-                grd.addColorStop(0, `hsla(${hue}, 100%, 70%, 1)`);
-                grd.addColorStop(1, `hsla(${hue}, 100%, 50%, 1)`);
-                ctx.beginPath(); ctx.moveTo(-w / 2, -h / 2); ctx.lineTo(w / 2, -h / 2);
-                ctx.lineTo(w / 3, h / 2); ctx.lineTo(-w / 3, h / 2); ctx.closePath();
-                ctx.fillStyle = grd; ctx.fill();
-
-                ctx.shadowBlur = 0; ctx.strokeStyle = "rgba(255, 255, 220, 0.7)"; ctx.lineWidth = 2;
-                ctx.beginPath(); ctx.moveTo(-w / 2, -h / 2); ctx.lineTo(-w / 3, h / 2); ctx.stroke();
-                ctx.beginPath(); ctx.moveTo(w / 2, -h / 2); ctx.lineTo(w / 3, h / 2); ctx.stroke();
-
-                ctx.shadowBlur = 20; ctx.shadowColor = "#fff";
-                ctx.beginPath(); ctx.arc(0, h / 4, w / 5, 0, Math.PI * 2); ctx.fillStyle = "#fff"; ctx.fill();
-
-                lanternCache.push({ img: c, width: c.width, height: c.height });
-            }
+        const audios = {};
+        for (let key in audioSources) {
+            audios[key] = new Audio(audioSources[key]);
+            audios[key].preload = 'auto';
         }
 
-        function preRenderParticles() {
-            // Generate sprites for Red/Gold spectrum
-            // Hues: 0-20 (Red) and 40-60 (Yellow/Gold)
-            const hues = [];
-            for (let i = 0; i <= 20; i += 2) hues.push(i);
-            for (let i = 40; i <= 60; i += 2) hues.push(i);
+        // ==========================================
+        // 初始化老虎机 DOM
+        // ==========================================
+        const numHeight = 160; // 每个数字的高度 (px)
+        const totalLoops = 5;  // 滚动圈数，决定了“条”的长度
 
-            hues.forEach(hue => {
-                const size = 16; // Texture size (enough for max radius + glow)
-                const c = document.createElement('canvas');
-                c.width = size; c.height = size;
-                const ctx = c.getContext('2d');
-                const center = size / 2;
-                const radius = size * 0.25; // Base radius
+        // 生成数字条的函数
+        function buildStrip(stripId, targetNum, isLastDigit = false) {
+            const stripEl = document.getElementById(`strip-${stripId}`);
+            stripEl.innerHTML = '';
+            
+            // 构建一个很长的数字序列用于滚动
+            // 顺序： 0, 1, 2...9, 0, 1... 结尾是我们的目标数字
+            let sequence = [];
+            for (let i = 0; i < totalLoops; i++) {
+                for (let j = 0; j <= 9; j++) {
+                    sequence.push(j);
+                }
+            }
+            
+            // 把目标数字及周围的数字拼接到最后
+            if (!isLastDigit) {
+                sequence.push(targetNum);
+            } else {
+                // 如果是个位数，它的序列结尾需要是： ...真实数字, 假动作数字
+                // 例如：真实是 7，假动作是 8。那么条带最下方必须是 7，紧接着是 8。
+                // 因为我们是往上滚动（y轴负向），显示窗口是从上往下看条带。
+                // 所以 DOM 结构（从上到下）应该是： [..., 6, 7, 8]
+                // 这样滚动到最底下时，先显示 7，再往下滚显示 8（假动作停住）。然后瞬间向上退格回到 7。
+                sequence.push(actualWinningNumber[2]); // 7
+                sequence.push(fakePeakNumber[2]);      // 8
+            }
 
-                // Outer Glow
-                const grad = ctx.createRadialGradient(center, center, 0, center, center, size / 2);
-                grad.addColorStop(0, `hsla(${hue}, 100%, 70%, 1)`);
-                grad.addColorStop(0.4, `hsla(${hue}, 100%, 50%, 0.8)`);
-                grad.addColorStop(1, `hsla(${hue}, 100%, 50%, 0)`);
-                ctx.fillStyle = grad;
-                ctx.fillRect(0, 0, size, size);
-
-                // White Core
-                ctx.beginPath();
-                ctx.arc(center, center, radius * 0.6, 0, Math.PI * 2);
-                ctx.fillStyle = "#fff";
-                ctx.fill();
-
-                particleCache.push({ img: c, size: size, hue: hue });
+            sequence.forEach(num => {
+                const div = document.createElement('div');
+                div.className = 'number';
+                div.innerText = num;
+                stripEl.appendChild(div);
             });
+
+            // 初始重置位置到最上方（显示第一个数字）
+            gsap.set(stripEl, { y: 0 });
+            return sequence.length;
         }
 
-        // --- CLASSES ---
-        class Lantern {
-            constructor() {
-                this.reset();
-                this.y = Math.random() * State.height;
-                this.swingPhase = Math.random() * Math.PI * 2;
-            }
-            reset() {
-                this.x = Math.random() * State.width;
-                this.y = State.height + Math.random() * 200;
-                this.baseSpeed = Math.random() * 0.5 + 0.5;
-                this.sprite = lanternCache[Math.floor(Math.random() * lanternCache.length)];
-                this.swingPhase = Math.random() * Math.PI * 2;
-                this.swingSpeed = 0.02 + Math.random() * 0.02;
-                this.scale = 0.9 + Math.random() * 0.5;
-            }
-            update(dt) {
-                // Base upward movement
-                let speed = this.baseSpeed * State.globalSpeedMultiplier * dt;
+        const len0 = buildStrip(0, actualWinningNumber[0]);
+        const len1 = buildStrip(1, actualWinningNumber[1]);
+        const len2 = buildStrip(2, actualWinningNumber[2], true); // 个位数采用特殊构造
 
-                // Storm Effect: Reverted (Standard movement)
-                this.y -= speed;
+        // ==========================================
+        // 核心动画逻辑 (GSAP Timeline)
+        // ==========================================
+        const startBtn = document.getElementById('start-btn');
 
-                if (State.mode === 'WINNER') {
-                    // Float up gently, no swing
-                    this.swingPhase += this.swingSpeed * 0.1 * dt;
-                } else {
-                    this.swingPhase += this.swingSpeed * dt;
-                    this.x += Math.sin(this.swingPhase * 0.5) * 0.2 * dt;
+        startBtn.addEventListener('click', () => {
+            startBtn.disabled = true;
+            
+            // 播放狂飙启动音效
+            audios.reel.loop = true;
+            audios.reel.play().catch(e => console.log("音效未加载"));
+
+            const strips = [
+                document.getElementById('strip-0'),
+                document.getElementById('strip-1'),
+                document.getElementById('strip-2')
+            ];
+
+            // 添加视觉模糊
+            strips.forEach(strip => strip.classList.add('blur-effect'));
+
+            // 计算目标 Y 轴偏移量
+            // (总长度 - 1) * 高度，即滚动到最后一个元素
+            const targetY0 = -((len0 - 1) * numHeight); 
+            const targetY1 = -((len1 - 1) * numHeight);
+            
+            // 个位数：倒数第二个是真实数字(7)，倒数第一个是假动作数字(8)
+            const fakeY2 = -((len2 - 1) * numHeight); // 滚到 8
+            const realY2 = -((len2 - 2) * numHeight); // 退回到 7
+
+            const tl = gsap.timeline();
+
+            // 1. 定格 1 (百位)： 3秒后瞬间卡死
+            tl.to(strips[0], {
+                y: targetY0,
+                duration: 3,
+                ease: "power2.inOut", // 前面加速，后面平滑减速定格
+                onComplete: () => {
+                    strips[0].classList.remove('blur-effect');
+                    audios.stop1.play().catch(e=>{}); // 播放“啪”
                 }
+            });
 
-                // Wrap around X
-                if (this.x > State.width + 50) this.x = -50;
-                if (this.y < -150) this.reset();
-            }
-            draw(ctx) {
-                // Optimized: No save/restore (High Perf)
-                ctx.translate(this.x, this.y);
-                ctx.rotate(Math.sin(this.swingPhase) * 0.1);
-                ctx.scale(this.scale, this.scale);
-                ctx.drawImage(this.sprite.img, -this.sprite.width / 2, -this.sprite.height / 2);
-
-                // Reset Matrix directly
-                ctx.setTransform(1, 0, 0, 1, 0, 0);
-            }
-        }
-
-        class Particle {
-            constructor(x, y, isConfetti = false) {
-                this.init(x, y, isConfetti);
-            }
-
-            init(x, y, isConfetti) {
-                this.x = x; this.y = y;
-                this.isConfetti = isConfetti;
-                this.life = 1.0;
-
-                if (!isConfetti) {
-                    this.maxHistory = 8; // Power of 2 for Bitwise Masking
-                    if (!this.historyX) {
-                        this.historyX = new Float32Array(this.maxHistory);
-                        this.historyY = new Float32Array(this.maxHistory);
-                    }
-                    this.historyIdx = 0;
-                    this.historyLen = 0;
+            // 2. 定格 2 (十位)： 5秒后卡死
+            tl.to(strips[1], {
+                y: targetY1,
+                duration: 5,
+                ease: "power2.inOut",
+                onComplete: () => {
+                    strips[1].classList.remove('blur-effect');
+                    audios.reel.pause(); // 停止高速齿轮音效
+                    audios.stop2.play().catch(e=>{}); // 播放“咚”
+                    audios.slowPulse.play().catch(e=>{}); // 开始播放心跳/滴答声
                 }
+            }, "<"); // "<" 表示与前一个动画同时开始
 
-                const angle = Math.random() * Math.PI * 2;
-                if (isConfetti) {
-                    this.vx = (Math.random() - 0.5) * 5;
-                    this.vy = (Math.random() - 0.5) * 5 - 5;
-                    this.drag = 0.95; this.gravity = 0.15; this.decay = 0.005;
-                    this.size = Math.random() * 5 + 3;
-                    this.color = `hsl(${40 + Math.random() * 20}, 100%, 75%)`;
-                    this.rotation = Math.random() * Math.PI;
-                    this.rotationSpeed = (Math.random() - 0.5) * 0.2;
-                } else {
-                    // Firework Spark
-                    const speed = Math.random() * 18 + 12; // Bigger burst radius
-                    this.vx = Math.cos(angle) * speed;
-                    this.vy = Math.sin(angle) * speed;
-                    this.drag = 0.92; // Higher drag for air resistance
-                    this.gravity = 0.15; // Heavier gravity for arc
-                    this.decay = Math.random() * 0.015 + 0.01;
-
-                    // Select sprite from cache
-                    this.sprite = particleCache[Math.floor(Math.random() * particleCache.length)];
-                    this.size = this.sprite.size * (0.8 + Math.random() * 0.4); // Variation
-
-                    // Optimization: Use solid HSL and let globalAlpha handle opacity
-                    this.color = `hsl(${this.sprite.hue}, 100%, 70%)`;
+            // 3. 极限拉扯 (个位)：极慢的拖泥带水，滚向假动作数字
+            tl.to(strips[2], {
+                y: fakeY2,
+                duration: 8, // 持续时间最长，营造极其缓慢的最后阶段
+                ease: "power4.out", // 极强的减速效果，最后几格像爬一样
+                onComplete: () => {
+                    strips[2].classList.remove('blur-effect');
+                    audios.slowPulse.pause();
+                    audios.fakeStop.play().catch(e=>{});
                 }
-            }
+            }, "<");
 
-            update(dt) {
-                // Save position for trail (Ring Buffer Write)
-                if (!this.isConfetti) {
-                    this.historyX[this.historyIdx] = this.x;
-                    this.historyY[this.historyIdx] = this.y;
-                    // Optimized: Bitwise Masking (Requires maxHistory to be Power of 2)
-                    this.historyIdx = (this.historyIdx + 1) & 7; // & (maxHistory - 1)
-                    if (this.historyLen < this.maxHistory) this.historyLen++;
+            // 4. 假动作停顿：Timeline 在这里自然延时
+            // (停留在 8，持续 1.8 秒，让人信以为真)
+            tl.to({}, { duration: 1.8 }); 
+
+            // 5. 巅峰反转：极其生硬、快速地倒退一格！
+            tl.to(strips[2], {
+                y: realY2, // 瞬间变回真实数字
+                duration: 0.15, // 极短的时间，强调“断裂/生硬”感
+                ease: "back.out(4)", // 强烈的回弹缓动，模拟弹簧崩断的视觉冲击
+                onStart: () => {
+                    audios.snapBack.play().catch(e=>{});
+                },
+                onComplete: () => {
+                    // 6. 中奖爆发
+                    audios.win.play().catch(e=>{});
+                    triggerConfetti();
+                    startBtn.innerText = "重新抽奖";
+                    startBtn.disabled = false;
+                    
+                    // 重置逻辑绑定到下一次点击
+                    startBtn.onclick = () => location.reload();
                 }
+            });
+        });
 
-                this.x += this.vx * dt; this.y += this.vy * dt;
-                this.vx *= this.drag; this.vy *= this.drag; this.vy += this.gravity * dt;
-                this.life -= this.decay * dt;
-                if (this.isConfetti) this.rotation += this.rotationSpeed * dt;
-            }
-            draw(ctx) {
-                const alpha = Math.max(0, this.life);
+        // 撒花特效函数
+        function triggerConfetti() {
+            var duration = 3000;
+            var end = Date.now() + duration;
 
-                // Common alpha for both types
-                ctx.globalAlpha = alpha;
+            (function frame() {
+                confetti({
+                    particleCount: 5,
+                    angle: 60,
+                    spread: 55,
+                    origin: { x: 0 },
+                    colors: ['#d4af37', '#ff0000', '#ffffff'] // 配合主题色的彩带
+                });
+                confetti({
+                    particleCount: 5,
+                    angle: 120,
+                    spread: 55,
+                    origin: { x: 1 },
+                    colors: ['#d4af37', '#ff0000', '#ffffff']
+                });
 
-                if (this.isConfetti) {
-                    ctx.fillStyle = this.color;
-
-                    // Optimization: Manual Matrix Math (Avoids internal matrix multiplication overhead)
-                    // setTransform(a, b, c, d, e, f) -> (cos, sin, -sin, cos, x, y)
-                    const c = Math.cos(this.rotation);
-                    const s = Math.sin(this.rotation);
-
-                    // x|0 and y|0 for integer snapping
-                    ctx.setTransform(c, s, -s, c, (this.x | 0), (this.y | 0));
-
-                    ctx.fillRect(-this.size / 2, -this.size / 2, this.size, this.size);
-
-                    // Reset Matrix (Identity)
-                    ctx.setTransform(1, 0, 0, 1, 0, 0);
-                } else {
-                    // Draw Trail from Ring Buffer
-                    if (this.historyLen > 1) {
-                        ctx.beginPath();
-                        // Optimized: Bitwise Masking for finding start index
-                        let startIdx = (this.historyIdx - this.historyLen + 8) & 7;
-                        ctx.moveTo((this.historyX[startIdx] | 0), (this.historyY[startIdx] | 0));
-
-                        for (let i = 1; i < this.historyLen; i++) {
-                            let currIdx = (startIdx + i) & 7;
-                            ctx.lineTo((this.historyX[currIdx] | 0), (this.historyY[currIdx] | 0));
-                        }
-                        ctx.lineTo((this.x | 0), (this.y | 0));
-
-                        // Optimized: lineCap is set globally in resize()
-                        ctx.lineWidth = this.size * 0.15; // Thinner trail than head
-
-                        // Optimized: No string manipulation, just set color
-                        ctx.strokeStyle = this.color;
-                        ctx.stroke();
-                    }
-
-                    // Draw Sprite Head (GPU Blit)
-                    // Alpha is already set by ctx.globalAlpha above
-                    const offset = this.size / 2;
-                    // Rounding here creates crisp edges and saves anti-aliasing work
-                    ctx.drawImage(this.sprite.img, (this.x - offset) | 0, (this.y - offset) | 0, this.size, this.size);
+                if (Date.now() < end) {
+                    requestAnimationFrame(frame);
                 }
-                ctx.globalAlpha = 1.0;
-            }
+            }());
         }
-
-        // --- RENDER LOOP ---
-        const lCanvas = document.getElementById('lantern-canvas');
-        const lCtx = lCanvas.getContext('2d');
-
-        const fCanvas = document.getElementById('firework-canvas');
-        const fCtx = fCanvas.getContext('2d');
-
-        const lanterns = [];
-        const particles = [];
-        const particlePool = []; // Object Pool
-
-        function init() {
-            resize();
-            preRenderLanterns();
-            preRenderParticles(); // NEW
-            for (let i = 0; i < Config.lanternCount; i++) lanterns.push(new Lantern());
-            requestAnimationFrame(loop);
-        }
-
-        function resize() {
-            State.width = window.innerWidth;
-            State.height = window.innerHeight;
-            lCanvas.width = State.width; lCanvas.height = State.height;
-            fCanvas.width = State.width; fCanvas.height = State.height;
-
-            // Optimization: Set Composite Operation ONCE (State persists until resize)
-            lCtx.globalCompositeOperation = 'lighter';
-            fCtx.globalCompositeOperation = 'lighter';
-
-            // Optimization: Set Line Cap ONCE (All fireworks use round)
-            fCtx.lineCap = 'round';
-        }
-        window.addEventListener('resize', resize);
-
-        function loop(timestamp) {
-            if (!State.lastTime) State.lastTime = timestamp;
-            const deltaTime = (timestamp - State.lastTime) / 16.67;
-            State.lastTime = timestamp;
-            const dt = Math.min(deltaTime, 3.0);
-
-            let targetMultiplier = 1.0;
-            if (State.mode === 'STORM') targetMultiplier = Config.stormMaxSpeed;
-            if (State.mode === 'WINNER') targetMultiplier = 0.5; // Slow motion ascent
-
-            State.globalSpeedMultiplier += (targetMultiplier - State.globalSpeedMultiplier) * 0.05 * dt;
-
-            // Optimized: Cache Screen Dimensions
-            const width = State.width;
-            const height = State.height;
-
-            lCtx.clearRect(0, 0, width, height);
-            // fCtx clearing moved to conditional block below
-
-            for (let i = 0; i < lanterns.length; i++) {
-                lanterns[i].update(dt);
-                lanterns[i].draw(lCtx);
-            }
-
-            // Optimization: Only render firework layer if there are particles
-            // This effectively pauses the GPU rasterization for this layer when idle
-            if (particles.length > 0) {
-                fCtx.clearRect(0, 0, width, height);
-
-                // Optimized Loop with Swap-and-Pop + Pooling
-                let i = 0;
-                while (i < particles.length) {
-                    const p = particles[i];
-                    p.update(dt);
-                    p.draw(fCtx);
-                    if (p.life <= 0) {
-                        // Recycle to Pool
-                        particlePool.push(p);
-
-                        // Swap with last element and pop (O(1) removal)
-                        particles[i] = particles[particles.length - 1];
-                        particles.pop();
-                        // Do NOT increment i, re-check this new index
-                    } else {
-                        i++;
-                    }
-                }
-            }
-
-            // --- SYNCED DOM UPDATES (No Layout Thrashing) ---
-            if (State.drumrollActive) {
-                if (timestamp - State.lastDrumrollTime > 50) { // 50ms interval
-                    const r = Math.floor(Math.random() * Config.totalParticipants) + 1;
-                    els.scrambleText.textContent = r;
-                    State.lastDrumrollTime = timestamp;
-                }
-            }
-
-            requestAnimationFrame(loop);
-        }
-
-        // --- GAME LOGIC ---
-        let scrambleInterval;
-        const sfxStorm = document.getElementById('sfx-storm');
-        const sfxBoom = document.getElementById('sfx-boom');
-
-        const els = {
-            glass: document.getElementById('glass-backdrop'),
-            scrambleScreen: document.getElementById('scramble-screen'),
-            winnerScreen: document.getElementById('winner-screen'),
-            scrambleText: document.getElementById('scramble-text'),
-            resultText: document.getElementById('result-text'),
-            igniteBtn: document.getElementById('ignite-btn'),
-            title: document.getElementById('main-title'),
-            flash: document.getElementById('flash'),
-            godRays: document.querySelector('.god-rays')
-        };
-
-        function startDraw() {
-            els.igniteBtn.style.opacity = '0';
-            els.igniteBtn.style.pointerEvents = 'none';
-            els.title.style.opacity = '0';
-            els.title.style.transform = 'translate(-50%, -50%) scale(0.8)';
-
-            try { sfxStorm.currentTime = 0; sfxStorm.play(); } catch (e) { }
-
-            State.mode = 'STORM';
-
-            // Show Glass + Scramble
-            els.godRays.classList.add('pulsing');
-            els.glass.classList.add('visible');
-            els.scrambleScreen.classList.add('visible');
-            els.scrambleScreen.classList.add('scrambling');
-
-            // Start Drumroll loop (Synced with Render Loop)
-            State.drumrollActive = true;
-            State.lastDrumrollTime = 0;
-
-            setTimeout(revealWinner, Config.drawDuration);
-        }
-
-        function getSecureRandomNumber(max) {
-            const array = new Uint32Array(1);
-            window.crypto.getRandomValues(array);
-            return Math.floor((array[0] / 4294967296) * max) + 1;
-        }
-
-        function revealWinner() {
-            // Stop Drumroll
-            State.drumrollActive = false;
-
-            const winningNumber = getSecureRandomNumber(Config.totalParticipants);
-
-            // 1. Fade out scramble first
-            els.scrambleScreen.classList.remove('visible');
-            els.scrambleScreen.classList.remove('scrambling');
-
-            // 2. Play sound and Flash
-            try { sfxStorm.pause(); sfxBoom.currentTime = 0; sfxBoom.play(); } catch (e) { }
-
-            els.flash.style.opacity = '1';
-            // 3. Reveal winner inside the flash
-            setTimeout(() => {
-                els.godRays.classList.remove('pulsing');
-
-                // Fade out flash slowly
-                els.flash.style.opacity = '0';
-
-                State.mode = 'WINNER';
-
-                // Set Body Class for Z-Index change
-                document.body.classList.add('winner-revealed');
-
-                els.resultText.innerText = winningNumber;
-                els.winnerScreen.classList.add('visible');
-
-                els.resultText.classList.remove('number-pop');
-                void els.resultText.offsetWidth;
-                els.resultText.classList.add('number-pop');
-
-                spawnExplosion(State.width / 2, State.height / 2, true);
-                setTimeout(() => spawnExplosion(State.width / 2 - 300, State.height / 2, false), 200);
-                setTimeout(() => spawnExplosion(State.width / 2 + 300, State.height / 2, false), 400);
-
-            }, 300); // Wait 300ms (during whiteout) to switch
-        }
-
-        function resetDraw() {
-            document.body.classList.remove('winner-revealed');
-            els.winnerScreen.classList.remove('visible');
-            els.glass.classList.remove('visible'); // Hide glass
-
-            els.igniteBtn.style.opacity = '1';
-            els.igniteBtn.style.pointerEvents = 'auto';
-            els.title.style.opacity = '1';
-            els.title.style.transform = 'translate(-50%, -50%) scale(1)';
-
-            State.mode = 'IDLE';
-            particles = [];
-        }
-
-        function spawnExplosion(x, y, includeConfetti) {
-            function spawn(isConfetti) {
-                let p;
-                if (particlePool.length > 0) {
-                    p = particlePool.pop();
-                    p.init(x, y, isConfetti);
-                } else {
-                    p = new Particle(x, y, isConfetti);
-                }
-                particles.push(p);
-            }
-
-            for (let i = 0; i < Config.fireworksCount; i++) {
-                spawn(false);
-            }
-            if (includeConfetti) {
-                for (let i = 0; i < Config.confettiCount; i++) {
-                    spawn(true);
-                }
-            }
-        }
-
-        init();
-
     </script>
 </body>
-
 </html>
