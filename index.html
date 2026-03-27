@@ -4,52 +4,56 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>马大灯笼节 - 幸运抽奖</title>
+    <title>镜里花 - 卡通抽奖</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=ZCOOL+KuaiLe&family=Fredoka+One&display=swap" rel="stylesheet">
+    
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=Cinzel:wght@900&display=swap');
-
         :root {
-            --primary-gold: #ffdd44;
-            --primary-red: #ff3333;
-            --gold-dark: #b8860b;
-            --machine-housing: linear-gradient(145deg, #3a0b0b, #110000);
+            --c-red: #ff5252;
+            --c-blue: #4a90e2;
+            --c-yellow: #ffd32a;
+            --c-white: #ffffff;
+            --c-black: #2d3436; /* 粗描边颜色 */
+            --c-bg: #fff5f0;    /* 奶油底色 */
+            --outline: 4px solid var(--c-black);
+            --hard-shadow: 8px 8px 0px rgba(45, 52, 54, 0.15);
         }
 
         html, body {
             width: 100%; height: 100%; margin: 0; padding: 0; overflow: hidden;
-            position: fixed; top: 0; left: 0; background-color: #000;
-            background: radial-gradient(circle at center, #4a0e0e 0%, #1a0505 50%, #000000 100%);
-            font-family: 'Cinzel', serif; color: white;
+            position: fixed; top: 0; left: 0; 
+            background-color: var(--c-bg);
+            font-family: 'Fredoka One', 'ZCOOL KuaiLe', cursive; 
+            color: var(--c-black);
             user-select: none; -webkit-user-select: none; cursor: default;
         }
 
-        /* --- LAYER 1: GOD RAYS (Back) --- */
+        /* --- 欢乐的旋转背景光束 (卡通风) --- */
         .god-rays {
             position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-            width: 150vmax; height: 150vmax;
-            background: repeating-conic-gradient(rgba(255, 235, 150, 0.15) 0deg, rgba(255, 235, 150, 0.15) 15deg, transparent 15deg, transparent 30deg);
-            box-shadow: 0 0 100px 80px rgba(255, 200, 50, 0.2);
-            mix-blend-mode: screen; animation: rotateRays 60s linear infinite;
+            width: 200vmax; height: 200vmax;
+            background: repeating-conic-gradient(
+                rgba(255, 211, 42, 0.15) 0deg, rgba(255, 211, 42, 0.15) 15deg, 
+                transparent 15deg, transparent 30deg
+            );
+            animation: rotateRays 60s linear infinite;
             z-index: 1; pointer-events: none;
         }
         @keyframes rotateRays { from { transform: translate(-50%, -50%) rotate(0deg); } to { transform: translate(-50%, -50%) rotate(360deg); } }
-        .god-rays.pulsing { animation: rotateRays 60s linear infinite, rayPulse 2s ease-in-out infinite alternate; }
-        @keyframes rayPulse { 0% { opacity: 0.3; filter: brightness(1.0); } 100% { opacity: 0.8; filter: brightness(1.5); } }
 
-        /* --- LAYER 2: LANTERNS (DYNAMIC) --- */
-        #lantern-canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 2; transition: z-index 0.1s step-end; }
-        body.winner-revealed #lantern-canvas { z-index: 25; }
+        /* --- LAYER 2: 动态彩纸 / 烟花 --- */
+        #firework-canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 40; pointer-events: none; }
 
-        /* --- LAYER 3: GREY GLASS BACKDROP --- */
+        /* --- 模糊遮罩 (抽奖时聚焦) --- */
         #glass-backdrop {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(15, 5, 5, 0.8); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
-            z-index: 20; opacity: 0; pointer-events: none; transition: opacity 0.6s cubic-bezier(0.25, 1, 0.5, 1);
+            background: rgba(255, 255, 255, 0.6); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+            z-index: 20; opacity: 0; pointer-events: none; transition: opacity 0.4s;
         }
         #glass-backdrop.visible { opacity: 1; }
 
-        /* --- LAYER 4: TEXT CONTENT & SLOT MACHINE --- */
+        /* --- 内容主容器 --- */
         .content-layer {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             display: flex; flex-direction: column; justify-content: center; align-items: center;
@@ -58,169 +62,194 @@
         }
         .content-layer.visible { opacity: 1; pointer-events: auto; }
 
-        /* --- LAYER 5: FIREWORKS --- */
-        #firework-canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 40; pointer-events: none; }
-
-        /* --- STYLING (Title & Controls) --- */
+        /* --- 顶部标题 (抽奖前显示) --- */
         #main-title {
-            position: absolute; top: 45%; left: 50%; transform: translate(-50%, -50%);
-            text-align: center; z-index: 10; pointer-events: none; padding: 5vh 8vw; width: max-content;
-            background: linear-gradient(145deg, rgba(40, 20, 20, 0.85), rgba(10, 5, 5, 0.95));
-            backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px);
-            border-radius: 24px; border: 1px solid rgba(255, 215, 0, 0.15);
-            box-shadow: 0 30px 60px rgba(0, 0, 0, 0.8); transition: all 0.6s ease;
+            position: absolute; top: 35%; left: 50%; transform: translate(-50%, -50%);
+            text-align: center; z-index: 10; pointer-events: none;
+            transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
         }
         .title-chinese {
-            font-family: 'Ma Shan Zheng', cursive; font-size: 5vw; color: var(--primary-gold); margin: 0;
-            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.8), 0 0 40px rgba(255, 160, 0, 0.8); letter-spacing: 12px; white-space: nowrap;
+            font-size: 6vw; color: var(--c-red); margin: 0;
+            text-shadow: 4px 4px 0 var(--c-black), -2px -2px 0 var(--c-black), 2px -2px 0 var(--c-black), -2px 2px 0 var(--c-black), 0 8px 0 rgba(45, 52, 54, 0.2);
+            letter-spacing: 5px; white-space: nowrap; line-height: 1;
         }
         .title-english {
-            font-family: 'Cinzel', serif; font-size: 1.2vw; color: #ffbfbf; letter-spacing: 8px; margin-top: 15px;
-            text-shadow: 0 0 15px rgba(255, 50, 50, 0.8); opacity: 0.95; white-space: nowrap;
+            font-size: 2vw; color: var(--c-blue); letter-spacing: 4px; margin-top: 10px;
+            text-shadow: 2px 2px 0 var(--c-black); white-space: nowrap;
         }
 
-        #controls { position: absolute; bottom: 10%; left: 50%; transform: translateX(-50%); z-index: 40; transition: opacity 0.5s ease; }
+        /* --- 控制按钮 --- */
+        #controls { position: absolute; bottom: 8%; left: 50%; transform: translateX(-50%); z-index: 40; }
         
         button {
-            background: linear-gradient(to bottom, #c0151a, #660000); border: 2px solid rgba(255, 215, 0, 0.6);
-            padding: 15px 70px; font-size: 28px; font-family: 'Ma Shan Zheng', cursive; color: var(--primary-gold);
-            cursor: pointer; border-radius: 50px; box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6);
-            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1); text-shadow: 2px 2px 0px rgba(0, 0, 0, 0.8); letter-spacing: 3px; white-space: nowrap;
+            background: var(--c-yellow); border: var(--outline);
+            padding: 15px 60px; font-size: 32px; font-family: 'ZCOOL KuaiLe', cursive; color: var(--c-black);
+            cursor: pointer; border-radius: 40px; 
+            box-shadow: 0 8px 0 var(--c-black), 0 15px 20px rgba(0,0,0,0.1);
+            transition: all 0.1s; letter-spacing: 2px;
         }
-        button:hover { transform: scale(1.05); box-shadow: 0 0 80px rgba(255, 200, 0, 0.6); }
-        button:active { transform: scale(0.95); }
-        button:disabled { filter: grayscale(1); cursor: not-allowed; opacity: 0.5; transform: none; box-shadow: none; }
+        button:hover { transform: translateY(-4px); box-shadow: 0 12px 0 var(--c-black), 0 20px 25px rgba(0,0,0,0.15); background: #ffeaa7; }
+        button:active { transform: translateY(8px); box-shadow: 0 0 0 var(--c-black); }
+        button:disabled { background: #dfe6e9; color: #b2bec3; cursor: not-allowed; box-shadow: 0 8px 0 #b2bec3; transform: none; }
 
-        .vignette { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 3; background: radial-gradient(circle, transparent 40%, rgba(0, 0, 0, 0.9) 100%); }
-        #flash {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: white; z-index: 100; pointer-events: none; opacity: 0;
-            transition: opacity 0.8s ease-out; mix-blend-mode: overlay;
-        }
+        #flash { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: white; z-index: 100; pointer-events: none; opacity: 0; transition: opacity 0.5s; }
 
-        /* ================= 老虎机外壳与拉杆核心样式 ================= */
+        /* ================= 卡通老虎机主体 ================= */
         
-        /* 增加顶部拱门设计的经典老虎机外壳 */
         .machine-wrapper {
             position: relative; 
-            padding: 40px; 
-            padding-top: 60px;
-            background: var(--machine-housing);
-            border-radius: 30px 30px 20px 20px; 
-            border: 3px solid var(--gold-dark);
-            box-shadow: 0 40px 80px rgba(0,0,0,0.9), inset 0 20px 40px rgba(255, 215, 0, 0.15);
-            transform-style: preserve-3d; 
-            transform: rotateX(5deg);
-            margin-right: 80px; /* 为右侧拉杆预留空间 */
+            width: 380px;
+            background: var(--c-red);
+            border-radius: 20px; 
+            border: var(--outline);
+            /* 模拟插画中的 2.5D 蓝色侧边与底座立体感 */
+            box-shadow: 
+                -15px 0 0 var(--c-blue), 
+                -15px 0 0 4px var(--c-black),
+                -15px 15px 0 #b2bec3,
+                -15px 15px 0 4px var(--c-black),
+                0 15px 0 #b2bec3,
+                0 15px 0 4px var(--c-black),
+                -25px 35px 30px rgba(0,0,0,0.2);
+            margin-left: 30px; /* 平衡视觉重心 */
+            margin-top: 50px;
+            display: flex; flex-direction: column; align-items: center;
+            padding-bottom: 25px;
         }
 
-        /* 顶部跑马灯装饰牌 */
-        .machine-wrapper::before {
-            content: "🎰 JACKPOT 🎰"; 
-            position: absolute; 
-            top: 15px; 
-            left: 50%; 
-            transform: translateX(-50%);
-            color: #ffdd44;
-            font-family: 'Cinzel', serif; 
-            font-size: 1.8rem;
-            font-weight: 900;
-            text-shadow: 0 0 10px #ff0000, 0 0 20px #ff0000;
+        /* 顶部拱门招牌：镜里花 */
+        .machine-top-marquee {
+            position: absolute;
+            top: -65px; left: 50%; transform: translateX(-50%);
+            width: 300px; height: 100px;
+            background: var(--c-blue);
+            border: var(--outline);
+            border-radius: 50px 50px 15px 15px;
+            display: flex; justify-content: center; align-items: center;
+            box-shadow: inset 0 -8px 0 rgba(0,0,0,0.2);
+            z-index: 5;
+        }
+        /* 招牌上的黄色灯泡装饰 */
+        .machine-top-marquee::before {
+            content: '🌸'; position: absolute; left: 15px; font-size: 30px;
+        }
+        .machine-top-marquee::after {
+            content: '🌸'; position: absolute; right: 15px; font-size: 30px;
+        }
+        .marquee-title {
+            color: var(--c-yellow);
+            font-size: 45px;
+            text-shadow: 3px 3px 0 var(--c-black);
             letter-spacing: 5px;
+            line-height: 1;
+            margin-top: -10px;
         }
 
+        /* 滚轮大窗框 */
         .machine-container {
-            display: flex; gap: 25px; padding: 25px; 
-            background: #000;
-            border-radius: 12px; 
-            box-shadow: inset 0 0 50px rgba(0,0,0,1), 0 5px 15px rgba(255, 215, 0, 0.2);
-            border: 2px solid #331111;
+            margin-top: 60px;
+            display: flex; gap: 10px; padding: 15px; 
+            background: var(--c-white);
+            border-radius: 15px; 
+            border: var(--outline);
+            box-shadow: inset 0 8px 0 rgba(0,0,0,0.1);
+            position: relative;
         }
 
-        /* ================= 物理拉杆 (Lever) ================= */
+        /* 下方面板：SPIN & WIN */
+        .machine-lower-panel {
+            margin-top: 25px;
+            width: 80%;
+            background: var(--c-white);
+            border: var(--outline);
+            border-radius: 10px;
+            padding: 10px 0;
+            text-align: center;
+            font-size: 24px;
+            color: var(--c-red);
+            text-shadow: 1px 1px 0 var(--c-black);
+            letter-spacing: 2px;
+            box-shadow: inset 0 -4px 0 rgba(0,0,0,0.1);
+        }
+
+        /* 底部出币口 */
+        .machine-tray {
+            margin-top: 15px;
+            width: 60%;
+            height: 30px;
+            background: var(--c-yellow);
+            border: var(--outline);
+            border-radius: 5px;
+            box-shadow: inset 0 8px 0 rgba(0,0,0,0.2);
+        }
+
+        /* ================= 卡通拉杆 ================= */
         .slot-lever-container {
             position: absolute;
-            right: -80px; /* 附着在机器右侧 */
-            top: 50%;
-            transform: translateY(-30%);
-            width: 80px;
-            height: 250px;
-            perspective: 800px; /* 关键：让拉下动作产生 3D 透视 */
-            z-index: -1; /* 藏在机壳后面一点点更真实 */
+            right: -60px; top: 45%;
+            width: 60px; height: 150px;
+            perspective: 600px;
+            z-index: -1;
         }
 
-        /* 拉杆底座/铰链 */
+        /* 黄色底座 */
         .lever-base {
-            position: absolute;
-            bottom: 20px;
-            left: 0;
-            width: 40px;
-            height: 80px;
-            background: linear-gradient(to right, #222, #555, #222);
+            position: absolute; bottom: 0; left: 0;
+            width: 30px; height: 60px;
+            background: var(--c-yellow);
+            border: var(--outline);
             border-radius: 10px;
-            border: 2px solid #111;
-            box-shadow: -5px 5px 15px rgba(0,0,0,0.8);
-            z-index: 2;
         }
 
-        /* 金属杆身 */
+        /* 浅蓝色杆子 */
         .lever-arm {
-            position: absolute;
-            bottom: 60px; /* 旋转支点 */
-            left: 10px;
-            width: 20px;
-            height: 180px;
-            background: linear-gradient(to right, #999, #fff, #777);
+            position: absolute; bottom: 30px; left: 5px;
+            width: 20px; height: 120px;
+            background: #74b9ff;
+            border: var(--outline);
             border-radius: 10px;
-            transform-origin: bottom center; /* 关键：绕底部旋转 */
+            transform-origin: bottom center; 
             transform-style: preserve-3d;
-            box-shadow: -5px 0 10px rgba(0,0,0,0.5);
-            z-index: 1;
             cursor: pointer;
         }
 
-        /* 红宝石把手 */
+        /* 红色球头 */
         .lever-knob {
-            position: absolute;
-            top: -30px;
-            left: -15px;
-            width: 50px;
-            height: 50px;
-            background: radial-gradient(circle at 30% 30%, #ff6666, #cc0000, #4a0000);
+            position: absolute; top: -25px; left: -15px;
+            width: 42px; height: 42px;
+            background: var(--c-red);
+            border: var(--outline);
             border-radius: 50%;
-            box-shadow: 0 10px 20px rgba(0,0,0,0.8), inset 0 -5px 15px rgba(0,0,0,0.5);
-            border: 2px solid #800000;
-            transition: filter 0.2s;
-        }
-        
-        .lever-arm:hover .lever-knob {
-            filter: brightness(1.2);
-            box-shadow: 0 0 20px #ff0000;
+            /* 卡通高光 */
+            box-shadow: inset -5px -5px 0 rgba(0,0,0,0.2), inset 8px 8px 0 rgba(255,255,255,0.4);
         }
 
-        /* ================= 滚轮视窗 ================= */
+        /* ================= 滚轮视窗内部 ================= */
         .reel-window {
-            width: 140px; height: 190px; background-color: #0d0202;
-            border: 3px solid var(--gold-dark); border-radius: 10px; position: relative;
-            perspective: 800px; overflow: hidden; box-shadow: inset 0 0 20px rgba(255, 51, 51, 0.2);
+            width: 90px; height: 130px; background-color: #f1f2f6;
+            border: 3px solid var(--c-black); border-radius: 8px; position: relative;
+            perspective: 800px; overflow: hidden;
+            box-shadow: inset 0 5px 10px rgba(0,0,0,0.1);
         }
-        .reel-window::after {
-            content: ''; position: absolute; top: 0; left: 0; right: 0; height: 40%;
-            background: linear-gradient(to bottom, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 100%);
-            border-radius: 8px 8px 0 0; z-index: 20; pointer-events: none;
-        }
+        /* 简单的上下白色渐变遮罩，保持卡通清爽感 */
         .reel-shadow {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background: linear-gradient(to bottom, rgba(0,0,0,0.95) 0%, transparent 25%, transparent 75%, rgba(0,0,0,0.95) 100%);
+            background: linear-gradient(to bottom, rgba(255,255,255,0.9) 0%, transparent 20%, transparent 80%, rgba(255,255,255,0.9) 100%);
             pointer-events: none; z-index: 10;
         }
         .cylinder { width: 100%; height: 100%; position: absolute; transform-style: preserve-3d; }
+        
         .face {
-            position: absolute; width: 140px; height: 140px; left: 0; top: 25px;
+            position: absolute; width: 90px; height: 90px; left: 0; top: 20px;
             display: flex; align-items: center; justify-content: center;
-            font-size: 7.5rem; font-weight: 900; color: #fff;
-            text-shadow: 0 0 20px var(--primary-gold), 0 0 40px var(--primary-red);
-            backface-visibility: hidden; font-family: 'Cinzel', serif;
+            font-size: 5rem; color: var(--c-black);
+            backface-visibility: hidden; font-family: 'Fredoka One', cursive;
         }
+        /* 丰富数字的颜色，让它更像老虎机图案 */
+        .face:nth-child(3n+1) { color: var(--c-red); }
+        .face:nth-child(3n+2) { color: var(--c-blue); }
+        .face:nth-child(3n+3) { color: #00b894; }
+
     </style>
 </head>
 
@@ -230,21 +259,23 @@
     <audio id="sfx-boom" src="boom.mp3" preload="auto"></audio>
 
     <div id="flash"></div>
-    <div class="vignette"></div>
     <div class="god-rays"></div>
 
     <div id="glass-backdrop"></div>
-    <canvas id="lantern-canvas"></canvas>
 
     <div id="main-title">
         <h1 class="title-chinese">马大灯笼节</h1>
-        <div class="title-english">PESTA TANGLUNG UM</div>
-        <div class="title-sub">Grand Lucky Draw</div>
+        <div class="title-english">LUCKY DRAW</div>
     </div>
 
     <div id="machine-screen" class="content-layer">
+        
         <div class="machine-wrapper" id="machine">
             
+            <div class="machine-top-marquee">
+                <div class="marquee-title">镜里花</div>
+            </div>
+
             <div class="slot-lever-container">
                 <div class="lever-base"></div>
                 <div class="lever-arm" id="lever-arm" onclick="startDraw()">
@@ -257,111 +288,99 @@
                 <div class="reel-window"><div class="reel-shadow"></div><div class="cylinder" id="cyl-1"></div></div>
                 <div class="reel-window"><div class="reel-shadow"></div><div class="cylinder" id="cyl-2"></div></div>
             </div>
+
+            <div class="machine-lower-panel">
+                SPIN & WIN
+            </div>
+
+            <div class="machine-tray"></div>
         </div>
     </div>
 
     <canvas id="firework-canvas"></canvas>
 
     <div id="controls">
-        <button id="ignite-btn" onclick="startDraw()">⚡ 启 动 ⚡</button>
+        <button id="ignite-btn" onclick="startDraw()">LET'S PLAY!</button>
     </div>
 
     <script>
         // ==========================================
-        // 原始 Canvas 渲染核心 (保留)
+        // 实体彩纸（Confetti）物理系统
         // ==========================================
         const Config = {
-            totalParticipants: 450, lanternCount: 65, baseSpeed: 1.5, stormMaxSpeed: 30.0,
-            fireworksCount: 60, confettiCount: 80   
+            totalParticipants: 450, 
+            fireworksCount: 150 // 改为喷射大量彩纸
         };
-        const State = { mode: 'IDLE', width: 0, height: 0, globalSpeedMultiplier: 1.0, lastTime: 0 };
-        const lanternCache = []; const particleCache = []; 
+        const State = { width: 0, height: 0, lastTime: 0 };
 
-        function preRenderLanterns() {
-            const cacheCount = 12;
-            for (let i = 0; i < cacheCount; i++) {
-                const size = 42 + Math.random() * 26.25;
-                const c = document.createElement('canvas'); c.width = size * 3; c.height = size * 4;
-                const ctx = c.getContext('2d'); ctx.translate(size * 1.5, size * 1.5);
-                const hue = Math.floor(Math.random() * 40); ctx.shadowBlur = 40; ctx.shadowColor = `hsla(${hue}, 100%, 60%, 0.8)`;
-                const w = size * 0.55; const h = size * 0.75; const grd = ctx.createLinearGradient(-w / 2, -h / 2, w / 2, h / 2);
-                grd.addColorStop(0, `hsla(${hue}, 100%, 70%, 1)`); grd.addColorStop(1, `hsla(${hue}, 100%, 50%, 1)`);
-                ctx.beginPath(); ctx.moveTo(-w / 2, -h / 2); ctx.lineTo(w / 2, -h / 2); ctx.lineTo(w / 3, h / 2); ctx.lineTo(-w / 3, h / 2); ctx.closePath(); ctx.fillStyle = grd; ctx.fill();
-                ctx.shadowBlur = 0; ctx.strokeStyle = "rgba(255, 255, 220, 0.7)"; ctx.lineWidth = 2;
-                ctx.beginPath(); ctx.moveTo(-w / 2, -h / 2); ctx.lineTo(-w / 3, h / 2); ctx.stroke();
-                ctx.beginPath(); ctx.moveTo(w / 2, -h / 2); ctx.lineTo(w / 3, h / 2); ctx.stroke();
-                ctx.shadowBlur = 20; ctx.shadowColor = "#fff"; ctx.beginPath(); ctx.arc(0, h / 4, w / 5, 0, Math.PI * 2); ctx.fillStyle = "#fff"; ctx.fill();
-                lanternCache.push({ img: c, width: c.width, height: c.height });
-            }
-        }
-        function preRenderParticles() {
-            const hues = []; for (let i = 0; i <= 20; i += 2) hues.push(i); for (let i = 40; i <= 60; i += 2) hues.push(i);
-            hues.forEach(hue => {
-                const size = 16; const c = document.createElement('canvas'); c.width = size; c.height = size;
-                const ctx = c.getContext('2d'); const center = size / 2; const radius = size * 0.25; 
-                const grad = ctx.createRadialGradient(center, center, 0, center, center, size / 2);
-                grad.addColorStop(0, `hsla(${hue}, 100%, 70%, 1)`); grad.addColorStop(0.4, `hsla(${hue}, 100%, 50%, 0.8)`); grad.addColorStop(1, `hsla(${hue}, 100%, 50%, 0)`);
-                ctx.fillStyle = grad; ctx.fillRect(0, 0, size, size);
-                ctx.beginPath(); ctx.arc(center, center, radius * 0.6, 0, Math.PI * 2); ctx.fillStyle = "#fff"; ctx.fill();
-                particleCache.push({ img: c, size: size, hue: hue });
-            });
-        }
-
-        class Lantern {
-            constructor() { this.reset(); this.y = Math.random() * State.height; this.swingPhase = Math.random() * Math.PI * 2; }
-            reset() { this.x = Math.random() * State.width; this.y = State.height + Math.random() * 200; this.baseSpeed = Math.random() * 0.5 + 0.5; this.sprite = lanternCache[Math.floor(Math.random() * lanternCache.length)]; this.swingPhase = Math.random() * Math.PI * 2; this.swingSpeed = 0.02 + Math.random() * 0.02; this.scale = 0.9 + Math.random() * 0.5; }
-            update(dt) { let speed = this.baseSpeed * State.globalSpeedMultiplier * dt; this.y -= speed; if (State.mode === 'WINNER') { this.swingPhase += this.swingSpeed * 0.1 * dt; } else { this.swingPhase += this.swingSpeed * dt; this.x += Math.sin(this.swingPhase * 0.5) * 0.2 * dt; } if (this.x > State.width + 50) this.x = -50; if (this.y < -150) this.reset(); }
-            draw(ctx) { ctx.translate(this.x, this.y); ctx.rotate(Math.sin(this.swingPhase) * 0.1); ctx.scale(this.scale, this.scale); ctx.drawImage(this.sprite.img, -this.sprite.width / 2, -this.sprite.height / 2); ctx.setTransform(1, 0, 0, 1, 0, 0); }
-        }
-
-        class Particle {
-            constructor(x, y, isConfetti = false) { this.init(x, y, isConfetti); }
-            init(x, y, isConfetti) {
-                this.x = x; this.y = y; this.isConfetti = isConfetti; this.life = 1.0;
-                if (!isConfetti) { this.maxHistory = 8; if (!this.historyX) { this.historyX = new Float32Array(this.maxHistory); this.historyY = new Float32Array(this.maxHistory); } this.historyIdx = 0; this.historyLen = 0; }
+        class Confetti {
+            constructor(x, y) { this.init(x, y); }
+            init(x, y) {
+                this.x = x; this.y = y; 
+                this.size = Math.random() * 12 + 8;
                 const angle = Math.random() * Math.PI * 2;
-                if (isConfetti) { this.vx = (Math.random() - 0.5) * 5; this.vy = (Math.random() - 0.5) * 5 - 5; this.drag = 0.95; this.gravity = 0.15; this.decay = 0.005; this.size = Math.random() * 5 + 3; this.color = `hsl(${40 + Math.random() * 20}, 100%, 75%)`; this.rotation = Math.random() * Math.PI; this.rotationSpeed = (Math.random() - 0.5) * 0.2; } 
-                else { const speed = Math.random() * 18 + 12; this.vx = Math.cos(angle) * speed; this.vy = Math.sin(angle) * speed; this.drag = 0.92; this.gravity = 0.15; this.decay = Math.random() * 0.015 + 0.01; this.sprite = particleCache[Math.floor(Math.random() * particleCache.length)]; this.size = this.sprite.size * (0.8 + Math.random() * 0.4); this.color = `hsl(${this.sprite.hue}, 100%, 70%)`; }
+                const speed = Math.random() * 25 + 10;
+                this.vx = Math.cos(angle) * speed;
+                this.vy = Math.sin(angle) * speed - 10; // 向上喷发
+                this.gravity = 0.5; this.drag = 0.96;
+                this.life = 1.0; this.decay = Math.random() * 0.01 + 0.005;
+                
+                // 卡通色系
+                const colors = ['#ff5252', '#4a90e2', '#ffd32a', '#00b894', '#fd79a8'];
+                this.color = colors[Math.floor(Math.random() * colors.length)];
+                
+                this.rotation = Math.random() * Math.PI;
+                this.rotationSpeed = (Math.random() - 0.5) * 0.4;
+                this.shape = Math.random() > 0.5 ? 'rect' : 'circle';
             }
             update(dt) {
-                if (!this.isConfetti) { this.historyX[this.historyIdx] = this.x; this.historyY[this.historyIdx] = this.y; this.historyIdx = (this.historyIdx + 1) & 7; if (this.historyLen < this.maxHistory) this.historyLen++; }
-                this.x += this.vx * dt; this.y += this.vy * dt; this.vx *= this.drag; this.vy *= this.drag; this.vy += this.gravity * dt; this.life -= this.decay * dt; if (this.isConfetti) this.rotation += this.rotationSpeed * dt;
+                this.x += this.vx * dt; this.y += this.vy * dt;
+                this.vx *= this.drag; this.vy *= this.drag; 
+                this.vy += this.gravity * dt; // 掉落
+                this.life -= this.decay * dt; 
+                this.rotation += this.rotationSpeed * dt;
             }
             draw(ctx) {
-                const alpha = Math.max(0, this.life); ctx.globalAlpha = alpha;
-                if (this.isConfetti) { ctx.fillStyle = this.color; const c = Math.cos(this.rotation); const s = Math.sin(this.rotation); ctx.setTransform(c, s, -s, c, (this.x | 0), (this.y | 0)); ctx.fillRect(-this.size / 2, -this.size / 2, this.size, this.size); ctx.setTransform(1, 0, 0, 1, 0, 0); } 
-                else { if (this.historyLen > 1) { ctx.beginPath(); let startIdx = (this.historyIdx - this.historyLen + 8) & 7; ctx.moveTo((this.historyX[startIdx] | 0), (this.historyY[startIdx] | 0)); for (let i = 1; i < this.historyLen; i++) { let currIdx = (startIdx + i) & 7; ctx.lineTo((this.historyX[currIdx] | 0), (this.historyY[currIdx] | 0)); } ctx.lineTo((this.x | 0), (this.y | 0)); ctx.lineWidth = this.size * 0.15; ctx.strokeStyle = this.color; ctx.stroke(); } const offset = this.size / 2; ctx.drawImage(this.sprite.img, (this.x - offset) | 0, (this.y - offset) | 0, this.size, this.size); }
+                if(this.life <= 0) return;
+                ctx.globalAlpha = Math.max(0, this.life);
+                ctx.fillStyle = this.color;
+                ctx.strokeStyle = '#2d3436';
+                ctx.lineWidth = 2;
+                
+                ctx.translate(this.x, this.y);
+                ctx.rotate(this.rotation);
+                
+                ctx.beginPath();
+                if(this.shape === 'circle') {
+                    ctx.arc(0, 0, this.size/2, 0, Math.PI*2);
+                } else {
+                    ctx.rect(-this.size/2, -this.size/2, this.size, this.size);
+                }
+                ctx.fill(); ctx.stroke();
+                
+                ctx.setTransform(1, 0, 0, 1, 0, 0);
                 ctx.globalAlpha = 1.0;
             }
         }
 
-        const lCanvas = document.getElementById('lantern-canvas'); const lCtx = lCanvas.getContext('2d');
         const fCanvas = document.getElementById('firework-canvas'); const fCtx = fCanvas.getContext('2d');
-        const lanterns = []; let particles = []; const particlePool = []; 
+        let particles = []; const particlePool = []; 
 
         function init() {
-            resize(); preRenderLanterns(); preRenderParticles(); 
-            for (let i = 0; i < Config.lanternCount; i++) lanterns.push(new Lantern());
+            resize(); 
             requestAnimationFrame(loop);
         }
 
         function resize() {
             State.width = window.innerWidth; State.height = window.innerHeight;
-            lCanvas.width = State.width; lCanvas.height = State.height; fCanvas.width = State.width; fCanvas.height = State.height;
-            lCtx.globalCompositeOperation = 'lighter'; fCtx.globalCompositeOperation = 'lighter'; fCtx.lineCap = 'round';
+            fCanvas.width = State.width; fCanvas.height = State.height;
         }
         window.addEventListener('resize', resize);
 
         function loop(timestamp) {
             if (!State.lastTime) State.lastTime = timestamp;
             const deltaTime = (timestamp - State.lastTime) / 16.67; State.lastTime = timestamp; const dt = Math.min(deltaTime, 3.0);
-            let targetMultiplier = 1.0;
-            if (State.mode === 'STORM') targetMultiplier = Config.stormMaxSpeed;
-            if (State.mode === 'WINNER') targetMultiplier = 0.5; 
-            State.globalSpeedMultiplier += (targetMultiplier - State.globalSpeedMultiplier) * 0.05 * dt;
 
-            lCtx.clearRect(0, 0, State.width, State.height);
-            for (let i = 0; i < lanterns.length; i++) { lanterns[i].update(dt); lanterns[i].draw(lCtx); }
             if (particles.length > 0) {
                 fCtx.clearRect(0, 0, State.width, State.height);
                 let i = 0;
@@ -375,7 +394,7 @@
         }
 
         // ==========================================
-        // 物理拉杆与老虎机 GSAP 动画核心
+        // 卡通拉杆老虎机逻辑
         // ==========================================
         const els = {
             glass: document.getElementById('glass-backdrop'),
@@ -384,7 +403,6 @@
             igniteBtn: document.getElementById('ignite-btn'),
             title: document.getElementById('main-title'),
             flash: document.getElementById('flash'),
-            godRays: document.querySelector('.god-rays'),
             leverArm: document.getElementById('lever-arm')
         };
         const sfxStorm = document.getElementById('sfx-storm');
@@ -392,7 +410,7 @@
 
         const numFaces = 10;
         const anglePerFace = 360 / numFaces; 
-        const radius = Math.round((140 / 2) / Math.tan(Math.PI / numFaces));
+        const radius = Math.round((90 / 2) / Math.tan(Math.PI / numFaces)); // 半径适配新的小尺寸
 
         function buildCylinder(cylinderId) {
             const cyl = document.getElementById(`cyl-${cylinderId}`);
@@ -413,33 +431,28 @@
             if (isSpinning) return;
             isSpinning = true;
 
-            // 1. UI 切换
+            // UI 切换
             els.igniteBtn.disabled = true;
-            els.igniteBtn.innerText = "祈 福 中 ...";
+            els.igniteBtn.innerText = "SPINNING...";
             els.title.style.opacity = '0';
-            els.title.style.transform = 'translate(-50%, -50%) scale(0.8)';
+            els.title.style.transform = 'translate(-50%, -50%) scale(0.5) translateY(-200px)';
             
-            els.godRays.classList.add('pulsing');
             els.glass.classList.add('visible');
             els.machineScreen.classList.add('visible');
             
-            // ===================================
-            // 🔥 拉杆物理动画 🔥
-            // ===================================
+            // 卡通拉杆拉下动画
             const leverTl = gsap.timeline();
-            // 阶段 1: 用力往下拉 (rotateX 从 0 变到 70 度)
-            leverTl.to(els.leverArm, { rotationX: 75, duration: 0.25, ease: "power2.in" })
-            // 阶段 2: 松手，猛烈回弹 (带有弹簧阻尼效果)
-                   .to(els.leverArm, { rotationX: -10, duration: 0.5, ease: "elastic.out(1.5, 0.4)" })
-            // 阶段 3: 归位平息
+            leverTl.to(els.leverArm, { rotationX: 75, duration: 0.15, ease: "power2.in" })
+                   .to(els.leverArm, { rotationX: -15, duration: 0.5, ease: "elastic.out(1, 0.3)" })
                    .to(els.leverArm, { rotationX: 0, duration: 0.2, ease: "power1.inOut" });
 
-            // 拉下拉杆的瞬间触发音效和卷轴滚动
+            // 机器因为用力拉杆而微微下蹲
+            gsap.to(els.machineWrapper, { y: 15, duration: 0.15, yoyo: true, repeat: 1, ease: "power2.inOut" });
+
             setTimeout(() => {
                 try { sfxStorm.currentTime = 0; sfxStorm.play(); } catch (e) { }
-                State.mode = 'STORM'; 
                 startReels();
-            }, 250); // 延迟 250ms，完美匹配拉杆被拉到底的那一帧
+            }, 150); 
         }
 
         function startReels() {
@@ -456,10 +469,6 @@
 
             const tl = gsap.timeline();
 
-            // 机器整体起动震动
-            tl.to(els.machineWrapper, { y: 20, rotationX: 10, duration: 0.1, ease: "power2.in" })
-              .to(els.machineWrapper, { y: 0, rotationX: 5, duration: 0.3, ease: "back.out(2)" });
-
             tl.to(cyls[0], { rotationX: angle0, duration: 2.5, ease: "back.out(1.2)" }, 0);
             tl.to(cyls[1], { rotationX: angle1, duration: 4, ease: "back.out(1.2)" }, 0.5);
 
@@ -467,36 +476,31 @@
             tl.to(cyls[2], { rotationX: fakeAngle2 - 36, duration: 2.5, ease: "power2.inOut" });   
             tl.to(cyls[2], { rotationX: fakeAngle2, duration: 1.5, ease: "power4.out" });
             
-            tl.to({}, { duration: 1.5 }); 
+            tl.to({}, { duration: 1.2 }); 
 
-            // 反转暴击
-            tl.to(cyls[2], { rotationX: fakeAngle2 + 12, duration: 0.4, ease: "power1.inOut" });
+            // 卡通感夸张的反转
+            tl.to(cyls[2], { rotationX: fakeAngle2 + 18, duration: 0.3, ease: "power1.inOut" }); // 憋一大口气
             tl.to(cyls[2], {
                 rotationX: realAngle2, 
-                duration: 0.8,        
-                ease: "elastic.out(1.2, 0.4)", 
+                duration: 0.6,        
+                ease: "elastic.out(1.5, 0.4)", // 夸张弹回
                 onStart: () => {
+                    // 机器高兴地跳起来
                     gsap.fromTo(els.machineWrapper, 
-                        {y: 20, rotationX: 12}, 
-                        {y: 0, rotationX: 5, duration: 0.6, ease: "elastic.out(1.5, 0.3)"}
+                        {y: -20}, 
+                        {y: 0, duration: 0.6, ease: "bounce.out"}
                     );
                     els.flash.style.opacity = '1';
                     try { sfxStorm.pause(); sfxBoom.currentTime = 0; sfxBoom.play(); } catch (e) { }
                 },
                 onComplete: () => {
-                    els.godRays.classList.remove('pulsing');
                     els.flash.style.opacity = '0';
-                    State.mode = 'WINNER'; 
-                    document.body.classList.add('winner-revealed');
-
-                    spawnExplosion(State.width / 2, State.height / 2, true);
-                    setTimeout(() => spawnExplosion(State.width / 2 - 300, State.height / 2, false), 200);
-                    setTimeout(() => spawnExplosion(State.width / 2 + 300, State.height / 2, false), 400);
+                    spawnExplosion(State.width / 2, State.height / 2 + 100);
 
                     currentAngles = [angle0, angle1, realAngle2];
                     
                     setTimeout(() => {
-                        els.igniteBtn.innerText = "下 一 位";
+                        els.igniteBtn.innerText = "NEXT!";
                         els.igniteBtn.disabled = false;
                         els.igniteBtn.onclick = resetDraw;
                         isSpinning = false;
@@ -506,28 +510,24 @@
         }
 
         function resetDraw() {
-            document.body.classList.remove('winner-revealed');
             els.machineScreen.classList.remove('visible');
             els.glass.classList.remove('visible'); 
             els.title.style.opacity = '1';
             els.title.style.transform = 'translate(-50%, -50%) scale(1)';
             
-            els.igniteBtn.innerText = "⚡ 启 动 ⚡";
+            els.igniteBtn.innerText = "LET'S PLAY!";
             els.igniteBtn.onclick = startDraw;
 
-            State.mode = 'IDLE';
             particles = []; 
         }
 
-        function spawnExplosion(x, y, includeConfetti) {
-            function spawn(isConfetti) {
+        function spawnExplosion(x, y) {
+            for (let i = 0; i < Config.fireworksCount; i++) {
                 let p;
-                if (particlePool.length > 0) { p = particlePool.pop(); p.init(x, y, isConfetti); } 
-                else { p = new Particle(x, y, isConfetti); }
+                if (particlePool.length > 0) { p = particlePool.pop(); p.init(x, y); } 
+                else { p = new Confetti(x, y); }
                 particles.push(p);
             }
-            for (let i = 0; i < Config.fireworksCount; i++) { spawn(false); }
-            if (includeConfetti) { for (let i = 0; i < Config.confettiCount; i++) { spawn(true); } }
         }
 
         init();
