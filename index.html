@@ -4,251 +4,361 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>镜里花 - 卡通抽奖</title>
+    <title>镜里花 - 高级复古抽奖</title>
+    <!-- 引入强大的物理动画库 -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=ZCOOL+KuaiLe&family=Fredoka+One&display=swap" rel="stylesheet">
     
     <style>
         :root {
-            --c-red: #ff5252;
-            --c-blue: #4a90e2;
-            --c-yellow: #ffd32a;
-            --c-white: #ffffff;
-            --c-black: #2d3436; /* 粗描边颜色 */
-            --c-bg: #fff5f0;    /* 奶油底色 */
-            --outline: 4px solid var(--c-black);
-            --hard-shadow: 8px 8px 0px rgba(45, 52, 54, 0.15);
+            /* Ultimate Vintage Republic of China Palette (极致质感的民国风配色) */
+            --c-wine: #6d1b24;        /* 沉浸高级的老红木/酒红背景 */
+            --c-wine-light: #9a2b36;  /* 高光红 */
+            --c-emerald: #0b594b;     /* 黑胶唱片机的重重墨绿色 */
+            --c-emerald-light: #158f78;
+            --c-gold: #d4af37;        /* 纯正的老上海复古金 */
+            --c-gold-dark: #a88826;   /* 暗黄铜阴影 */
+            --c-cream: #fbf8f1;       /* 宣纸/老式海报的珍珠白 */
+            --c-dark: #2a1616;        /* 极度深咖色(用于所有高级描边) */
+            
+            --outline: 6px solid var(--c-dark);
         }
 
         html, body {
             width: 100%; height: 100%; margin: 0; padding: 0; overflow: hidden;
             position: fixed; top: 0; left: 0; 
-            background-color: var(--c-bg);
+            /* 华丽的墙纸背景：翡翠绿搭配暗金色菱形复古波纹 */
+            background-color: var(--c-emerald);
+            background-image: 
+                radial-gradient(var(--c-gold-dark) 4px, transparent 4px),
+                radial-gradient(var(--c-gold-dark) 4px, transparent 4px);
+            background-size: 60px 60px;
+            background-position: 0 0, 30px 30px;
+            
             font-family: 'Fredoka One', 'ZCOOL KuaiLe', cursive; 
-            color: var(--c-black);
+            color: var(--c-dark);
             user-select: none; -webkit-user-select: none; cursor: default;
         }
 
-        /* --- 欢乐的旋转背景光束 (卡通风) --- */
-        .god-rays {
-            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-            width: 200vmax; height: 200vmax;
-            background: repeating-conic-gradient(
-                rgba(255, 211, 42, 0.15) 0deg, rgba(255, 211, 42, 0.15) 15deg, 
-                transparent 15deg, transparent 30deg
-            );
-            animation: rotateRays 60s linear infinite;
-            z-index: 1; pointer-events: none;
+        /* --- 质感强烈的舞台红色法兰绒幕布 --- */
+        .curtain {
+            position: absolute; top: -10%; width: 55%; height: 120%; z-index: 200;
+            /* 逼真的丝绒红高光与极深暗角阴影叠加，呈现奢华布料质地 */
+            background-image: 
+                linear-gradient(to right, 
+                    rgba(10,0,0,0.95) 0%, 
+                    rgba(40,0,0,0.7) 15%, 
+                    rgba(180,20,30,0.1) 25%, 
+                    rgba(255,255,255,0.08) 30%, 
+                    rgba(180,20,30,0.1) 35%, 
+                    rgba(40,0,0,0.7) 45%, 
+                    rgba(10,0,0,0.95) 50%,
+                    rgba(40,0,0,0.7) 65%, 
+                    rgba(180,20,30,0.1) 75%, 
+                    rgba(255,255,255,0.08) 80%, 
+                    rgba(180,20,30,0.1) 85%, 
+                    rgba(40,0,0,0.7) 95%, 
+                    rgba(10,0,0,0.95) 100%
+                );
+            background-color: #5c0812; /* 沉重的复古剧场红底色 */
+            background-size: 18vw 100%;
+            pointer-events: auto; /* 阻挡提前点击 */
+            transform-style: preserve-3d;
         }
-        @keyframes rotateRays { from { transform: translate(-50%, -50%) rotate(0deg); } to { transform: translate(-50%, -50%) rotate(360deg); } }
+        .curtain.left { 
+            left: 0; 
+            border-right: 12px solid #a88826;
+            /* 左右幕布交界处制造巨大的环境光遮蔽阴影 */
+            box-shadow: 20px 0 60px rgba(0,0,0,0.8), inset -30px 0 80px rgba(0,0,0,0.9);
+            transform-origin: top left;
+        }
+        .curtain.right { 
+            right: 0; 
+            border-left: 12px solid #a88826;
+            box-shadow: -20px 0 60px rgba(0,0,0,0.8), inset 30px 0 80px rgba(0,0,0,0.9);
+            transform-origin: top right;
+        }
 
-        /* --- LAYER 2: 动态彩纸 / 烟花 --- */
+        /* --- 动态彩纸 / 烟花 --- */
         #firework-canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 40; pointer-events: none; }
-
-        /* --- 模糊遮罩 (抽奖时聚焦) --- */
-        #glass-backdrop {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(255, 255, 255, 0.6); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
-            z-index: 20; opacity: 0; pointer-events: none; transition: opacity 0.4s;
-        }
-        #glass-backdrop.visible { opacity: 1; }
 
         /* --- 内容主容器 --- */
         .content-layer {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             display: flex; flex-direction: column; justify-content: center; align-items: center;
-            z-index: 30; opacity: 0; pointer-events: none; transition: opacity 0.4s;
-            perspective: 1200px;
-        }
-        .content-layer.visible { opacity: 1; pointer-events: auto; }
-
-        /* --- 顶部标题 (抽奖前显示) --- */
-        #main-title {
-            position: absolute; top: 35%; left: 50%; transform: translate(-50%, -50%);
-            text-align: center; z-index: 10; pointer-events: none;
-            transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
-        }
-        .title-chinese {
-            font-size: 6vw; color: var(--c-red); margin: 0;
-            text-shadow: 4px 4px 0 var(--c-black), -2px -2px 0 var(--c-black), 2px -2px 0 var(--c-black), -2px 2px 0 var(--c-black), 0 8px 0 rgba(45, 52, 54, 0.2);
-            letter-spacing: 5px; white-space: nowrap; line-height: 1;
-        }
-        .title-english {
-            font-size: 2vw; color: var(--c-blue); letter-spacing: 4px; margin-top: 10px;
-            text-shadow: 2px 2px 0 var(--c-black); white-space: nowrap;
+            z-index: 30; perspective: 1500px;
+            opacity: 0; /* JS动画淡入 */
+            transform: scale(0.92); /* 舞台深处出现 */
         }
 
-        /* --- 控制按钮 --- */
-        #controls { position: absolute; bottom: 8%; left: 50%; transform: translateX(-50%); z-index: 40; }
+        /* ================= 大剧院复古探照大灯 ================= */
+        .spotlight-layer {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            z-index: 20; pointer-events: none; overflow: hidden;
+            mix-blend-mode: screen; /* 叠加模式，保留背景的翡翠绿纹理 */
+        }
+        /* 基础锐利光束 */
+        .spotlight {
+            position: absolute; width: 25vw; height: 130vh;
+            filter: blur(20px);
+            opacity: 0; /* 待机开场时淡入 */
+        }
         
-        button {
-            background: var(--c-yellow); border: var(--outline);
-            padding: 15px 60px; font-size: 32px; font-family: 'ZCOOL KuaiLe', cursive; color: var(--c-black);
-            cursor: pointer; border-radius: 40px; 
-            box-shadow: 0 8px 0 var(--c-black), 0 15px 20px rgba(0,0,0,0.1);
-            transition: all 0.1s; letter-spacing: 2px;
+        /* 顶部两簇向下聚光 */
+        .spotlight.top {
+            top: -10vh;
+            background: linear-gradient(180deg, rgba(255, 240, 180, 0.7) 0%, rgba(255, 215, 100, 0.1) 60%, transparent 100%);
+            transform-origin: top center;
+            clip-path: polygon(40% 0, 60% 0, 95% 100%, 5% 100%);
         }
-        button:hover { transform: translateY(-4px); box-shadow: 0 12px 0 var(--c-black), 0 20px 25px rgba(0,0,0,0.15); background: #ffeaa7; }
-        button:active { transform: translateY(8px); box-shadow: 0 0 0 var(--c-black); }
-        button:disabled { background: #dfe6e9; color: #b2bec3; cursor: not-allowed; box-shadow: 0 8px 0 #b2bec3; transform: none; }
+        .spotlight.top.left { left: 15vw; transform: rotate(20deg); }
+        .spotlight.top.right { right: 15vw; transform: rotate(-20deg); }
 
-        #flash { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: white; z-index: 100; pointer-events: none; opacity: 0; transition: opacity 0.5s; }
+        /* 底部两簇逆火聚光 */
+        .spotlight.bottom {
+            bottom: -10vh; top: auto;
+            background: linear-gradient(0deg, rgba(255, 240, 180, 0.65) 0%, rgba(255, 215, 100, 0.1) 60%, transparent 100%);
+            transform-origin: bottom center;
+            clip-path: polygon(5% 0, 95% 0, 60% 100%, 40% 100%);
+        }
+        .spotlight.bottom.left { left: 15vw; transform: rotate(-20deg); }
+        .spotlight.bottom.right { right: 15vw; transform: rotate(20deg); }
 
-        /* ================= 卡通老虎机主体 ================= */
-        
+        /* ================= 震撼巨大化的高级复古老虎机 ================= */
         .machine-wrapper {
             position: relative; 
-            width: 380px;
-            background: var(--c-red);
-            border-radius: 20px; 
+            width: 880px; /* 【视觉核心】加宽左右边界，容纳跑马灯 */
+            background: linear-gradient(135deg, var(--c-wine-light) 0%, var(--c-wine) 100%);
+            border-radius: 60px 60px 35px 35px; 
             border: var(--outline);
-            /* 模拟插画中的 2.5D 蓝色侧边与底座立体感 */
+            /* 极其夸张厚重的 2.5D 立体实木与黄铜阴影结构 */
             box-shadow: 
-                -15px 0 0 var(--c-blue), 
-                -15px 0 0 4px var(--c-black),
-                -15px 15px 0 #b2bec3,
-                -15px 15px 0 4px var(--c-black),
-                0 15px 0 #b2bec3,
-                0 15px 0 4px var(--c-black),
-                -25px 35px 30px rgba(0,0,0,0.2);
-            margin-left: 30px; /* 平衡视觉重心 */
-            margin-top: 50px;
+                -25px 0 0 var(--c-emerald-light), 
+                -25px 0 0 6px var(--c-dark),
+                -25px 25px 0 rgba(0,0,0,0.4),
+                -25px 25px 0 6px var(--c-dark),
+                0 30px 0 #57161c,
+                0 30px 0 6px var(--c-dark),
+                -45px 60px 50px rgba(0,0,0,0.5);
             display: flex; flex-direction: column; align-items: center;
-            padding-bottom: 25px;
+            padding-bottom: 40px;
+            margin-right: -40px; /* 抵消巨型拉杆占据的空间，保持主体居中 */
         }
 
-        /* 顶部拱门招牌：镜里花 */
+        /* 老虎机四角的复古黄铜铆钉 */
+        .machine-wrapper::before, .machine-wrapper::after {
+            content: ''; position: absolute; width: 16px; height: 16px; 
+            background: var(--c-gold); border: 4px solid var(--c-dark); border-radius: 50%;
+        }
+        .machine-wrapper::before { top: 25px; left: 25px; box-shadow: inset -2px -2px 0 rgba(0,0,0,0.3); }
+        .machine-wrapper::after { top: 25px; right: 25px; box-shadow: inset -2px -2px 0 rgba(0,0,0,0.3); }
+
+        /* 极致奢华的顶部立体招牌 */
         .machine-top-marquee {
             position: absolute;
-            top: -65px; left: 50%; transform: translateX(-50%);
-            width: 300px; height: 100px;
-            background: var(--c-blue);
+            top: -120px; left: 50%; transform: translateX(-50%);
+            width: 720px; height: 160px;
+            background: linear-gradient(to bottom, var(--c-cream), #e8e3d3);
             border: var(--outline);
-            border-radius: 50px 50px 15px 15px;
-            display: flex; justify-content: center; align-items: center;
-            box-shadow: inset 0 -8px 0 rgba(0,0,0,0.2);
+            border-radius: 80px 80px 25px 25px;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            box-shadow: 
+                inset 0 -15px 0 rgba(0,0,0,0.1), 
+                inset 0 8px 0 #ffffff,
+                0 15px 20px rgba(0,0,0,0.3);
             z-index: 5;
-        }
-        /* 招牌上的黄色灯泡装饰 */
-        .machine-top-marquee::before {
-            content: '🌸'; position: absolute; left: 15px; font-size: 30px;
-        }
-        .machine-top-marquee::after {
-            content: '🌸'; position: absolute; right: 15px; font-size: 30px;
-        }
-        .marquee-title {
-            color: var(--c-yellow);
-            font-size: 45px;
-            text-shadow: 3px 3px 0 var(--c-black);
-            letter-spacing: 5px;
-            line-height: 1;
-            margin-top: -10px;
+            padding-top: 15px;
         }
 
-        /* 滚轮大窗框 */
+        /* 顶部两盏复古剧院圆球灯 */
+        .machine-top-marquee::before {
+            content: ''; position: absolute; top: -25px; left: 40px; width: 40px; height: 40px;
+            background: radial-gradient(circle at 12px 12px, #fff, #ffd32a); border: 4px solid var(--c-dark); border-radius: 50%;
+            box-shadow: 0 0 20px #ffd32a, inset -5px -5px 0 rgba(0,0,0,0.2);
+        }
+        .machine-top-marquee::after {
+            content: ''; position: absolute; top: -25px; right: 40px; width: 40px; height: 40px;
+            background: radial-gradient(circle at 12px 12px, #fff, #ffd32a); border: 4px solid var(--c-dark); border-radius: 50%;
+            box-shadow: 0 0 20px #ffd32a, inset -5px -5px 0 rgba(0,0,0,0.2);
+        }
+        
+        .marquee-subtitle {
+            color: var(--c-emerald);
+            font-size: 28px;
+            letter-spacing: 8px;
+            margin-bottom: -10px;
+            font-weight: bold;
+            text-shadow: 1px 1px 0 rgba(255,255,255,0.8);
+        }
+
+        .marquee-title {
+            color: var(--c-wine);
+            font-size: 78px;
+            text-shadow: 
+                3px 3px 0 var(--c-gold),
+                6px 6px 0 var(--c-dark);
+            letter-spacing: 12px;
+            line-height: 1.1;
+            position: relative;
+        }
+        
+        /* 招牌旁的复古桃花立体装饰 */
+        .floral-left, .floral-right { position: absolute; font-size: 55px; top: 18px; filter: drop-shadow(4px 4px 0 var(--c-dark)); }
+        .floral-left { left: 40px; transform: rotate(-20deg); }
+        .floral-right { right: 40px; transform: rotate(20deg); }
+
+        /* "镜里花" 概念的滚轮大窗框：变成了一个有厚重实木和黄铜边框的“海棠形复古立镜” */
         .machine-container {
-            margin-top: 60px;
-            display: flex; gap: 10px; padding: 15px; 
-            background: var(--c-white);
-            border-radius: 15px; 
-            border: var(--outline);
-            box-shadow: inset 0 8px 0 rgba(0,0,0,0.1);
+            margin-top: 100px;
+            display: flex; gap: 20px; padding: 25px 40px; 
+            background: #25443e; /* 深邃的墨绿内部，对比亮色的滚轮 */
+            border-radius: 70px 70px 60px 60px; /* 极具风采的高挑形镜鉴弧度 */
+            border: 12px solid var(--c-gold);
+            outline: var(--outline); /* 外沿深色描边 */
+            box-shadow: 
+                inset 0 20px 40px rgba(0,0,0,0.6), 
+                inset 0 -5px 0 rgba(255,255,255,0.2),
+                0 0 0 6px rgba(0,0,0,0.1); /* 双层边缘过渡 */
             position: relative;
         }
 
-        /* 下方面板：SPIN & WIN */
-        .machine-lower-panel {
-            margin-top: 25px;
-            width: 80%;
-            background: var(--c-white);
-            border: var(--outline);
-            border-radius: 10px;
-            padding: 10px 0;
-            text-align: center;
-            font-size: 24px;
-            color: var(--c-red);
-            text-shadow: 1px 1px 0 var(--c-black);
-            letter-spacing: 2px;
-            box-shadow: inset 0 -4px 0 rgba(0,0,0,0.1);
+        /* ================= 华丽复古跑马灯柱 ================= */
+        .light-pillar {
+            position: absolute;
+            top: 60px; bottom: 90px;
+            width: 45px;
+            display: flex; flex-direction: column; justify-content: space-around;
+            align-items: center;
+            background: #25443e; /* 暗金绿底座 */
+            border: 4px solid var(--c-gold-dark);
+            border-radius: 25px;
+            box-shadow: inset 0 0 15px rgba(0,0,0,0.8), 0 5px 10px rgba(0,0,0,0.3);
+            z-index: 10;
+        }
+        .light-pillar.left { left: 40px; }
+        .light-pillar.right { right: 40px; }
+
+        .bulb {
+            width: 24px; height: 24px; /* 稍微放大一点，提升存在感 */
+            background: radial-gradient(circle at 8px 8px, #ffebd6, #b08d28, #5c470a);
+            border-radius: 50%;
+            border: 2px solid var(--c-dark);
+            box-shadow: 
+                inset -3px -3px 8px rgba(0,0,0,0.7), 
+                0 5px 6px rgba(0,0,0,0.5);
+            transition: all 0.08s ease; /* 稍微加点惯性，像钨丝灯的物理熄灭残影 */
+            opacity: 0.45; 
+            filter: grayscale(0.5);
+        }
+        
+        .bulb.on {
+            opacity: 1;
+            filter: brightness(1.2) contrast(1.1);
+            /* 模拟钨丝：焰心高温纯白，中层亮金，边缘透彻的橘红 */
+            background: radial-gradient(circle at 12px 12px, #ffffff 5%, #ffdf00 35%, #e65c00 90%);
+            border: 2px solid #ffcc00; /* 点亮时光照甚至漫射到了边框边缘 */
+            /* 夸张的复古奢华光晕 (Halo) */
+            box-shadow: 
+                0 0 15px #ffdf00,
+                0 0 35px #ff8800,
+                0 0 60px rgba(255, 102, 0, 0.6),
+                inset 0 0 8px #ffffff;
+            z-index: 20;
+            transform: scale(1.05); /* 亮起时由于光晕产生非常微弱的膨胀错觉 */
         }
 
-        /* 底部出币口 */
-        .machine-tray {
-            margin-top: 15px;
-            width: 60%;
-            height: 30px;
-            background: var(--c-yellow);
-            border: var(--outline);
-            border-radius: 5px;
-            box-shadow: inset 0 8px 0 rgba(0,0,0,0.2);
-        }
-
-        /* ================= 卡通拉杆 ================= */
+        /* 巨大的沉浸式复古拉杆 */
         .slot-lever-container {
             position: absolute;
-            right: -60px; top: 45%;
-            width: 60px; height: 150px;
-            perspective: 600px;
+            right: -100px; top: 35%;
+            width: 100px; height: 240px;
+            perspective: 800px;
             z-index: -1;
         }
 
-        /* 黄色底座 */
         .lever-base {
             position: absolute; bottom: 0; left: 0;
-            width: 30px; height: 60px;
-            background: var(--c-yellow);
+            width: 50px; height: 110px;
+            background: linear-gradient(to right, var(--c-gold-dark), var(--c-gold), var(--c-gold-dark));
             border: var(--outline);
-            border-radius: 10px;
+            border-radius: 20px;
+            box-shadow: inset 8px 0 15px rgba(255,255,255,0.6);
         }
 
-        /* 浅蓝色杆子 */
         .lever-arm {
-            position: absolute; bottom: 30px; left: 5px;
-            width: 20px; height: 120px;
-            background: #74b9ff;
+            position: absolute; bottom: 50px; left: 13px;
+            width: 24px; height: 190px;
+            background: linear-gradient(to right, #ccc, #fff, #999);
             border: var(--outline);
-            border-radius: 10px;
+            border-radius: 12px;
             transform-origin: bottom center; 
             transform-style: preserve-3d;
             cursor: pointer;
+            box-shadow: inset 5px 0 0 rgba(255,255,255,0.8);
         }
 
-        /* 红色球头 */
         .lever-knob {
-            position: absolute; top: -25px; left: -15px;
-            width: 42px; height: 42px;
-            background: var(--c-red);
+            position: absolute; top: -40px; left: -22px;
+            width: 68px; height: 68px;
+            background: radial-gradient(circle at 20px 20px, #ff6b81, var(--c-wine));
             border: var(--outline);
             border-radius: 50%;
-            /* 卡通高光 */
-            box-shadow: inset -5px -5px 0 rgba(0,0,0,0.2), inset 8px 8px 0 rgba(255,255,255,0.4);
+            box-shadow: 
+                inset -8px -8px 0 rgba(0,0,0,0.4), 
+                inset 15px 15px 0 rgba(255,255,255,0.5),
+                10px 10px 20px rgba(0,0,0,0.3);
         }
 
-        /* ================= 滚轮视窗内部 ================= */
+        /* ================= 震撼放大的滚轮视窗内部 ================= */
         .reel-window {
-            width: 90px; height: 130px; background-color: #f1f2f6;
-            border: 3px solid var(--c-black); border-radius: 8px; position: relative;
-            perspective: 800px; overflow: hidden;
-            box-shadow: inset 0 5px 10px rgba(0,0,0,0.1);
+            width: 150px; height: 190px; 
+            background: linear-gradient(to bottom, #eae4d3, var(--c-cream), #eae4d3);
+            border: 6px solid var(--c-dark); border-radius: 20px; position: relative;
+            perspective: 1200px; overflow: hidden;
+            box-shadow: inset 0 10px 20px rgba(0,0,0,0.25);
         }
-        /* 简单的上下白色渐变遮罩，保持卡通清爽感 */
+        
+        /* 拟真厚影视窗遮罩，增加电影感 */
         .reel-shadow {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background: linear-gradient(to bottom, rgba(255,255,255,0.9) 0%, transparent 20%, transparent 80%, rgba(255,255,255,0.9) 100%);
+            background: linear-gradient(to bottom, rgba(0,0,0,0.4) 0%, transparent 20%, transparent 80%, rgba(0,0,0,0.5) 100%);
             pointer-events: none; z-index: 10;
+            box-shadow: inset 0 3px 0 rgba(255,255,255,0.9), inset 0 -3px 0 rgba(255,255,255,0.9);
         }
         .cylinder { width: 100%; height: 100%; position: absolute; transform-style: preserve-3d; }
         
         .face {
-            position: absolute; width: 90px; height: 90px; left: 0; top: 20px;
+            position: absolute; width: 150px; height: 150px; left: 0; top: 20px; /* 适配缩短的窗口高度 */
             display: flex; align-items: center; justify-content: center;
-            font-size: 5rem; color: var(--c-black);
+            font-size: 8rem; color: var(--c-dark);
             backface-visibility: hidden; font-family: 'Fredoka One', cursive;
+            text-shadow: 3px 3px 0px rgba(0,0,0,0.15);
         }
-        /* 丰富数字的颜色，让它更像老虎机图案 */
-        .face:nth-child(3n+1) { color: var(--c-red); }
-        .face:nth-child(3n+2) { color: var(--c-blue); }
-        .face:nth-child(3n+3) { color: #00b894; }
+        
+        /* 数字交替复古色系 */
+        .face:nth-child(even) { color: var(--c-wine); }
+        .face:nth-child(odd) { color: var(--c-emerald); }
+
+        /* --- 大气优雅的控制按钮，加粗加尊贵 --- */
+        .control-panel { position: relative; margin-top: 35px; z-index: 50; }
+        
+        button {
+            background: linear-gradient(to bottom, #FFECA1, var(--c-gold)); border: var(--outline);
+            padding: 18px 70px; font-size: 34px; font-family: 'ZCOOL KuaiLe', cursive; color: var(--c-dark);
+            cursor: pointer; border-radius: 60px; 
+            box-shadow: 
+                inset 0 4px 0 rgba(255,255,255,0.8),
+                0 10px 0 var(--c-dark), 
+                0 20px 30px rgba(0,0,0,0.3);
+            transition: all 0.1s; letter-spacing: 5px;
+            white-space: nowrap;
+        }
+        button:hover { transform: translateY(-3px); box-shadow: inset 0 4px 0 rgba(255,255,255,0.8), 0 13px 0 var(--c-dark), 0 25px 35px rgba(0,0,0,0.4); filter: brightness(1.1); }
+        button:active { transform: translateY(10px); box-shadow: inset 0 2px 0 rgba(255,255,255,0.3), 0 0 0 var(--c-dark); }
+        button:disabled { background: #b0b5b9; color: #5f6668; cursor: not-allowed; box-shadow: 0 10px 0 #5f6668; transform: none; filter: none; }
+
+        /* 刺目的高光，制造开奖的一瞬间的惊喜感 */
+        #flash { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #fff5e6; z-index: 100; pointer-events: none; opacity: 0; transition: opacity 0.5s; mix-blend-mode: overlay; }
 
     </style>
 </head>
@@ -259,25 +369,39 @@
     <audio id="sfx-boom" src="boom.mp3" preload="auto"></audio>
 
     <div id="flash"></div>
-    <div class="god-rays"></div>
 
-    <div id="glass-backdrop"></div>
+    <!-- 舞台红色幕布叠加层，更广的光影覆盖 -->
+    <div class="curtain left"></div>
+    <div class="curtain right"></div>
 
-    <div id="main-title">
-        <h1 class="title-chinese">马大灯笼节</h1>
-        <div class="title-english">LUCKY DRAW</div>
+    <!-- 剧院探照大灯层 -->
+    <div class="spotlight-layer">
+        <!-- 跨立体的 4 根剧院光柱组合 -->
+        <div class="spotlight top left" id="spotlight-tl"></div>
+        <div class="spotlight top right" id="spotlight-tr"></div>
+        <div class="spotlight bottom left" id="spotlight-bl"></div>
+        <div class="spotlight bottom right" id="spotlight-br"></div>
     </div>
 
-    <div id="machine-screen" class="content-layer">
+    <div class="content-layer">
         
+        <div id="machine-scale-wrap" style="transform-origin: center center; display: flex; justify-content: center; align-items: center; width: 100%; height: 100%;">
         <div class="machine-wrapper" id="machine">
             
             <div class="machine-top-marquee">
+                <span class="floral-left">🌸</span>
+                <span class="floral-right">🌸</span>
+                <div class="marquee-subtitle">第廿五届马大灯笼节</div>
                 <div class="marquee-title">镜里花</div>
             </div>
 
+            <!-- 复古跑马灯柱 -->
+            <div class="light-pillar left" id="pillar-left"></div>
+            <div class="light-pillar right" id="pillar-right"></div>
+
             <div class="slot-lever-container">
                 <div class="lever-base"></div>
+                <!-- 优化了金属反光的巨型拉杆 -->
                 <div class="lever-arm" id="lever-arm" onclick="startDraw()">
                     <div class="lever-knob"></div>
                 </div>
@@ -289,27 +413,23 @@
                 <div class="reel-window"><div class="reel-shadow"></div><div class="cylinder" id="cyl-2"></div></div>
             </div>
 
-            <div class="machine-lower-panel">
-                SPIN & WIN
+            <div class="control-panel">
+                <button id="ignite-btn" onclick="startDraw()">立刻抽奖</button>
             </div>
 
-            <div class="machine-tray"></div>
+        </div>
         </div>
     </div>
 
     <canvas id="firework-canvas"></canvas>
 
-    <div id="controls">
-        <button id="ignite-btn" onclick="startDraw()">LET'S PLAY!</button>
-    </div>
-
     <script>
         // ==========================================
-        // 实体彩纸（Confetti）物理系统
+        // 实体彩纸（Confetti）物理系统与色彩适配
         // ==========================================
         const Config = {
             totalParticipants: 450, 
-            fireworksCount: 150 // 改为喷射大量彩纸
+            fireworksCount: 600 // 【增强爆点】将喷射彩排数量从 250 提升至暴雨级别的 600
         };
         const State = { width: 0, height: 0, lastTime: 0 };
 
@@ -317,26 +437,26 @@
             constructor(x, y) { this.init(x, y); }
             init(x, y) {
                 this.x = x; this.y = y; 
-                this.size = Math.random() * 12 + 8;
+                this.size = Math.random() * 28 + 18; // 【增强视觉】大幅加厚彩纸规格，每片都超级明显
                 const angle = Math.random() * Math.PI * 2;
-                const speed = Math.random() * 25 + 10;
+                const speed = Math.random() * 50 + 25; // 【暴发力】喷射散布面推平屏幕
                 this.vx = Math.cos(angle) * speed;
-                this.vy = Math.sin(angle) * speed - 10; // 向上喷发
-                this.gravity = 0.5; this.drag = 0.96;
-                this.life = 1.0; this.decay = Math.random() * 0.01 + 0.005;
+                this.vy = Math.sin(angle) * speed - 25; // 开口向上崩弹
+                this.gravity = 0.65; this.drag = 0.96; // 【滞空拉长】增加抛物线延展
+                this.life = 1.0; this.decay = Math.random() * 0.004 + 0.002; // 【持久度】停留更久再慢慢消散
                 
-                // 卡通色系
-                const colors = ['#ff5252', '#4a90e2', '#ffd32a', '#00b894', '#fd79a8'];
+                // 更极端的民国华丽色系配比
+                const colors = ['#6d1b24', '#0b594b', '#d4af37', '#e74c3c', '#fbf8f1'];
                 this.color = colors[Math.floor(Math.random() * colors.length)];
                 
                 this.rotation = Math.random() * Math.PI;
-                this.rotationSpeed = (Math.random() - 0.5) * 0.4;
+                this.rotationSpeed = (Math.random() - 0.5) * 0.5;
                 this.shape = Math.random() > 0.5 ? 'rect' : 'circle';
             }
             update(dt) {
                 this.x += this.vx * dt; this.y += this.vy * dt;
                 this.vx *= this.drag; this.vy *= this.drag; 
-                this.vy += this.gravity * dt; // 掉落
+                this.vy += this.gravity * dt; 
                 this.life -= this.decay * dt; 
                 this.rotation += this.rotationSpeed * dt;
             }
@@ -344,7 +464,7 @@
                 if(this.life <= 0) return;
                 ctx.globalAlpha = Math.max(0, this.life);
                 ctx.fillStyle = this.color;
-                ctx.strokeStyle = '#2d3436';
+                ctx.strokeStyle = '#2a1616';
                 ctx.lineWidth = 2;
                 
                 ctx.translate(this.x, this.y);
@@ -368,12 +488,27 @@
 
         function init() {
             resize(); 
+            
+            // 延迟两秒后，探照灯优雅亮起并开始物理游弋
+            setTimeout(() => setSpotlightMode('idle'), 2000);
+
             requestAnimationFrame(loop);
         }
 
         function resize() {
             State.width = window.innerWidth; State.height = window.innerHeight;
             fCanvas.width = State.width; fCanvas.height = State.height;
+
+            // 动态响应屏幕尺寸进行自动补齐缩放
+            // 老虎机原生需要约 880px 宽和 780px 高 的安全显示区域
+            let scaleX = State.width / 880;
+            let scaleY = State.height / 780;
+            let scale = Math.min(1.0, scaleX, scaleY);
+            
+            let wrap = document.getElementById('machine-scale-wrap');
+            if (wrap) {
+                wrap.style.transform = `scale(${scale})`;
+            }
         }
         window.addEventListener('resize', resize);
 
@@ -389,28 +524,174 @@
                     if (p.life <= 0) { particlePool.push(p); particles[i] = particles[particles.length - 1]; particles.pop(); } 
                     else { i++; }
                 }
+            } else {
+                fCtx.clearRect(0, 0, State.width, State.height);
             }
             requestAnimationFrame(loop);
         }
 
         // ==========================================
-        // 卡通拉杆老虎机逻辑
+        // 核心翻页与巨大化圆柱体计算逻辑
         // ==========================================
         const els = {
-            glass: document.getElementById('glass-backdrop'),
-            machineScreen: document.getElementById('machine-screen'),
             machineWrapper: document.getElementById('machine'),
             igniteBtn: document.getElementById('ignite-btn'),
-            title: document.getElementById('main-title'),
             flash: document.getElementById('flash'),
             leverArm: document.getElementById('lever-arm')
         };
         const sfxStorm = document.getElementById('sfx-storm');
         const sfxBoom = document.getElementById('sfx-boom');
 
+        // ==========================================
+        // 真随机仿生探照灯引擎（Organic Spotlight Engine）
+        // ==========================================
+        const spTL = document.getElementById('spotlight-tl');
+        const spTR = document.getElementById('spotlight-tr');
+        const spBL = document.getElementById('spotlight-bl');
+        const spBR = document.getElementById('spotlight-br');
+        const allSp = [spTL, spTR, spBL, spBR];
+        
+        let spotlightMode = 'off'; // 'off', 'idle', 'panic', 'locked'
+
+        spTL._baseZ = 22;  spTR._baseZ = -22;
+        spBL._baseZ = -22; spBR._baseZ = 22;
+
+        // 为每个探照灯注入独立的流体物理属性
+        allSp.forEach((sp) => {
+            sp._targetZ = sp._baseZ; 
+            sp._currentZ = sp._baseZ;
+            sp._baseOp = 0; // 核心：基础底光交由 GSAP 缓冲控制
+            sp._opTarget = 0;
+            sp._opCurrent = 0;
+            sp._speed = 0.005 + Math.random() * 0.003; // 重武器般的极高缓释阻尼，创造巨大的设备重量感
+            
+            // 随机分配独立相位，确保各个灯光的游走轨迹互不重叠（纯正的 Lissajous 八字曲线）
+            sp._phaseX = Math.random() * 100;
+            sp._phaseY = Math.random() * 100;
+        });
+
+        // 运用阻尼平滑插值（Lerp）配合多重正弦波叠加，创造出极为丝滑、永不停滞的真实舞台光影流转
+        function organicSpotlightTicker(time, deltaTime) {
+            if (spotlightMode === 'locked') return; // 开奖定格时切断游弋循环，交由 GSAP 静态硬控
+
+            const dt = Math.min(deltaTime, 32); 
+
+            allSp.forEach(sp => {
+                if (spotlightMode === 'off') {
+                    sp._opTarget = 0;
+                    sp._targetZ = sp._baseZ;
+                } else if (spotlightMode === 'idle') {
+                    // --- 待机游弋模式 ---
+                    // 极低频波段的 X/Y 轴揉弦错位，形成类似芭蕾或自然操作员不可预测的探摸
+                    let wave1 = Math.sin(time * 0.35 + sp._phaseX) * 12; 
+                    let wave2 = Math.cos(time * 0.2 + sp._phaseY) * 7;
+                    sp._targetZ = sp._baseZ + wave1 + wave2;
+
+                    // 尘埃里穿透而过带来的明暗呼吸感
+                    sp._opTarget = sp._baseOp + Math.sin(time * 0.8 + sp._phaseX) * 0.15; 
+                } else if (spotlightMode === 'panic') {
+                    // --- 狂乱抽奖模式 ---
+                    // 缩短波长，极度扩大振幅，模拟光束焦急地在场内乱扫
+                    let wave1 = Math.sin(time * 4.5 + sp._phaseX) * 35; 
+                    let wave2 = Math.cos(time * 3.2 + sp._phaseY) * 20;
+                    sp._targetZ = sp._baseZ + wave1 + wave2;
+
+                    // 白热化的能量急闪
+                    sp._opTarget = sp._baseOp + Math.sin(time * 12 + sp._phaseX) * 0.25; 
+                }
+
+                // 计算阻尼追踪
+                let agility = spotlightMode === 'panic' ? 3.5 : 1.0;
+                let lerpFactor = sp._speed * agility * dt;
+                
+                // 线性阻尼跟随：像一块有质量的海绵去贴紧物理目标数字，彻底抹除动画中的生硬折角
+                sp._currentZ += (sp._targetZ - sp._currentZ) * lerpFactor;
+                sp._opCurrent += (sp._opTarget - sp._opCurrent) * lerpFactor;
+                
+                gsap.set(sp, { rotationZ: sp._currentZ, opacity: sp._opCurrent });
+            });
+        }
+        
+        // 绑定至 GSAP 的全局高优渲染心跳，每帧计算并重绘流体波段
+        gsap.ticker.add(organicSpotlightTicker);
+
+        function setSpotlightMode(mode) {
+            spotlightMode = mode;
+            gsap.killTweensOf(allSp); // 切断任何外力的干涉动画（例如原本的闲置呼吸）
+            
+            if (mode === 'idle') {
+                // 回归待机时，让底部基光温柔且宏大地长调升起
+                gsap.to(allSp, { _baseOp: 0.45, duration: 2.5, ease: "power2.inOut" });
+            } else if (mode === 'panic') {
+                gsap.to(allSp, { _baseOp: 0.75, duration: 0.4, ease: "power1.out" });
+            } else if (mode === 'locked') {
+                // 开奖定格强聚焦：四道锋利刀锋巨蟒般撕裂剧场劈向中心！
+                // 采用略微夸张的反弹溢出阻尼（back.out），展现巨型铸造设备暴力锁死产生的机械顿挫！
+                gsap.to(spTL, { rotationZ: 25, opacity: 0.95, duration: 0.8, ease: "back.out(1.2)" });
+                gsap.to(spTR, { rotationZ: -25, opacity: 0.95, duration: 0.8, ease: "back.out(1.2)" });
+                gsap.to(spBL, { rotationZ: -25, opacity: 0.95, duration: 0.8, ease: "back.out(1.2)" });
+                gsap.to(spBR, { rotationZ: 25, opacity: 0.95, duration: 0.8, ease: "back.out(1.2)" });
+                
+                // 对位校准，让引擎释放控制流时依然完美接洽现有锚点
+                spTL._currentZ = 25; spTR._currentZ = -25;
+                spBL._currentZ = -25; spBR._currentZ = 25;
+                allSp.forEach(sp => { sp._opCurrent = 0.95; sp._baseOp = 0.95; });
+            }
+        }
+
+        // ==========================================
+        // 跑马灯逻辑
+        // ==========================================
+        const numBulbsPerSide = 12;
+        const pillarLeft = document.getElementById('pillar-left');
+        const pillarRight = document.getElementById('pillar-right');
+        
+        // 生成灯泡
+        for(let i=0; i<numBulbsPerSide; i++) {
+            let bL = document.createElement('div'); bL.className = 'bulb'; pillarLeft.appendChild(bL);
+            let bR = document.createElement('div'); bR.className = 'bulb'; pillarRight.appendChild(bR);
+        }
+        
+        // 整理环路：左边从上往下，右边从下往上，形成完美闭环
+        const leftBulbs = Array.from(pillarLeft.querySelectorAll('.bulb'));
+        const rightBulbs = Array.from(pillarRight.querySelectorAll('.bulb')).reverse();
+        const marqueePath = [...leftBulbs, ...rightBulbs]; // 共24盏
+        
+        const marqueeObj = { progress: 0 };
+        let marqueeActive = false;
+        let lastMarqueeProgress = -1;
+        
+        // 待机呼吸灯效果
+        setInterval(() => {
+            if (marqueeActive) return;
+            const time = Date.now() / 400;
+            marqueePath.forEach((b, i) => {
+                // 每隔两盏灯亮起，交替进行
+                if(i % 2 === Math.floor(time) % 2) b.classList.add('on');
+                else b.classList.remove('on');
+            });
+        }, 400);
+
+        function updateMarquee() {
+            if (!marqueeActive) return;
+            let step = Math.floor(marqueeObj.progress);
+            if (step !== lastMarqueeProgress) {
+                lastMarqueeProgress = step;
+                marqueePath.forEach(b => b.classList.remove('on'));
+                // 点亮领头羊与拖尾（连续4盏灯光带）
+                for(let i=0; i<4; i++) {
+                    let idx = (step - i + marqueePath.length * 10) % marqueePath.length;
+                    marqueePath[idx].classList.add('on');
+                }
+            }
+        }
+        gsap.ticker.add(updateMarquee);
+
         const numFaces = 10;
         const anglePerFace = 360 / numFaces; 
-        const radius = Math.round((90 / 2) / Math.tan(Math.PI / numFaces)); // 半径适配新的小尺寸
+        
+        // 【关键修复】根据全新的视窗高度（150px的单元块）精确推算半径，确保大视野下数字紧凑贴合
+        const radius = Math.round((150 / 2) / Math.tan(Math.PI / numFaces));
 
         function buildCylinder(cylinderId) {
             const cyl = document.getElementById(`cyl-${cylinderId}`);
@@ -431,23 +712,27 @@
             if (isSpinning) return;
             isSpinning = true;
 
-            // UI 切换
+            marqueeActive = true;
+            marqueeObj.progress = 0;
+            lastMarqueeProgress = -1;
+
+            // 探照灯进入激昂乱序强阵扫射
+            setSpotlightMode('panic');
+
+            // UI 锁定
             els.igniteBtn.disabled = true;
-            els.igniteBtn.innerText = "SPINNING...";
-            els.title.style.opacity = '0';
-            els.title.style.transform = 'translate(-50%, -50%) scale(0.5) translateY(-200px)';
+            els.igniteBtn.innerText = "抽取中...";
+            particles = []; 
+            fCtx.clearRect(0, 0, State.width, State.height);
             
-            els.glass.classList.add('visible');
-            els.machineScreen.classList.add('visible');
-            
-            // 卡通拉杆拉下动画
+            // 拉杆动画，由于现在拉杆巨大，动画视觉更有力
             const leverTl = gsap.timeline();
             leverTl.to(els.leverArm, { rotationX: 75, duration: 0.15, ease: "power2.in" })
-                   .to(els.leverArm, { rotationX: -15, duration: 0.5, ease: "elastic.out(1, 0.3)" })
+                   .to(els.leverArm, { rotationX: -15, duration: 0.5, ease: "elastic.out(1.2, 0.4)" })
                    .to(els.leverArm, { rotationX: 0, duration: 0.2, ease: "power1.inOut" });
 
-            // 机器因为用力拉杆而微微下蹲
-            gsap.to(els.machineWrapper, { y: 15, duration: 0.15, yoyo: true, repeat: 1, ease: "power2.inOut" });
+            // 整个庞然大物因为下拉力引发巨大后座力下蹲
+            gsap.to(els.machineWrapper, { y: 20, duration: 0.15, yoyo: true, repeat: 1, ease: "power2.inOut" });
 
             setTimeout(() => {
                 try { sfxStorm.currentTime = 0; sfxStorm.play(); } catch (e) { }
@@ -460,77 +745,150 @@
             const targetNums = [parseInt(targetStr[0]), parseInt(targetStr[1]), parseInt(targetStr[2])];
 
             const cyls = [document.getElementById('cyl-0'), document.getElementById('cyl-1'), document.getElementById('cyl-2')];
-            const baseLoops = 15; 
-            
-            const angle0 = currentAngles[0] + (baseLoops * 360) + ((targetNums[0] * anglePerFace) - (currentAngles[0] % 360) + 360) % 360;
-            const angle1 = currentAngles[1] + ((baseLoops + 2) * 360) + ((targetNums[1] * anglePerFace) - (currentAngles[1] % 360) + 360) % 360;
-            const realAngle2 = currentAngles[2] + ((baseLoops + 4) * 360) + ((targetNums[2] * anglePerFace) - (currentAngles[2] % 360) + 360) % 360;
-            const fakeAngle2 = realAngle2 + anglePerFace; 
+            const baseLoops = [15, 20, 25]; 
+
+            const targetAngles = targetNums.map(n => n * anglePerFace);
+            let nextAngles = [];
+
+            targetAngles.forEach((target, i) => {
+                let currentMod = currentAngles[i] % 360;
+                let diffToZero = (360 - currentMod) % 360; 
+                nextAngles.push(currentAngles[i] + diffToZero + (baseLoops[i] * 360) + target);
+            });
 
             const tl = gsap.timeline();
 
-            tl.to(cyls[0], { rotationX: angle0, duration: 2.5, ease: "back.out(1.2)" }, 0);
-            tl.to(cyls[1], { rotationX: angle1, duration: 4, ease: "back.out(1.2)" }, 0.5);
-
-            tl.to(cyls[2], { rotationX: fakeAngle2 - 180, duration: 3, ease: "power1.in" }, 0.5);
-            tl.to(cyls[2], { rotationX: fakeAngle2 - 36, duration: 2.5, ease: "power2.inOut" });   
-            tl.to(cyls[2], { rotationX: fakeAngle2, duration: 1.5, ease: "power4.out" });
+            // 模拟真实老虎机经典的阶梯式机械制动
+            tl.to(cyls[0], { rotationX: nextAngles[0], duration: 2.5, ease: "power2.inOut" }, 0);
+            tl.to(cyls[1], { rotationX: nextAngles[1], duration: 3.5, ease: "power2.inOut" }, 0);
             
-            tl.to({}, { duration: 1.2 }); 
+            // ================= 终极物理连贯悬念机制 =================
+            // 机制：消除死板的空停！让最后几下转动越来越慢（tick...tick...），
+            // 然后自然地卡到缝隙阻力点上，紧接着极其沉重缓慢地滑向最终号码。
+            const isOvershoot = Math.random() > 0.5; // true为稍微转过头，false为差一点转到
+            const fakeOffset = isOvershoot ? 18 : -18; // 18度恰好是两个数字的正中间缝隙
+            const fakeAngle = nextAngles[2] + fakeOffset;
 
-            // 卡通感夸张的反转
-            tl.to(cyls[2], { rotationX: fakeAngle2 + 18, duration: 0.3, ease: "power1.inOut" }); // 憋一大口气
-            tl.to(cyls[2], {
-                rotationX: realAngle2, 
-                duration: 0.6,        
-                ease: "elastic.out(1.5, 0.4)", // 夸张弹回
-                onStart: () => {
-                    // 机器高兴地跳起来
-                    gsap.fromTo(els.machineWrapper, 
-                        {y: -20}, 
-                        {y: 0, duration: 0.6, ease: "bounce.out"}
-                    );
-                    els.flash.style.opacity = '1';
-                    try { sfxStorm.pause(); sfxBoom.currentTime = 0; sfxBoom.play(); } catch (e) { }
-                },
-                onComplete: () => {
-                    els.flash.style.opacity = '0';
-                    spawnExplosion(State.width / 2, State.height / 2 + 100);
+            // 1. 漫长真实的减速期：使用 power3.inOut 和 5.2 秒的长时，确保在卡住之前，
+            // 轮盘会缓缓驶过最后几个数字，速度越来越慢，肉眼清晰可见齿轮转动的减缓。
+            tl.to(cyls[2], { rotationX: fakeAngle, duration: 5.2, ease: "power3.inOut" }, 0);
+            
+            // 同步物理级别的跑马灯光效（狂奔150格后跟随齿轮吃力减速）
+            tl.to(marqueeObj, { progress: "+=150", duration: 5.2, ease: "power3.inOut" }, 0);
 
-                    currentAngles = [angle0, angle1, realAngle2];
-                    
-                    setTimeout(() => {
-                        els.igniteBtn.innerText = "NEXT!";
-                        els.igniteBtn.disabled = false;
-                        els.igniteBtn.onclick = resetDraw;
-                        isSpinning = false;
-                    }, 2000);
-                }
+            // 2. 模拟齿轮“咔”地一声陷入中间盲区的轻微机身震动
+            tl.to(els.machineWrapper, { y: 3, duration: 0.08, yoyo: true, repeat: 1 }, 5.2);
+            
+            // 3. 毫无死板的停滞等候！卡入缝隙后，伴随巨大的机械液压阻尼感，
+            // 缓慢且费力地“滑动”到完全确定的数字卡槽内，而不是生硬地弹跳。
+            tl.to(cyls[2], { rotationX: nextAngles[2], duration: 1.2, ease: "power1.inOut" }, 5.2);
+            tl.to(marqueeObj, { progress: "+=5", duration: 1.2, ease: "power1.inOut" }, 5.2); // 最后沉重一格格滑位
+
+            // 使用更为底层且稳定的 onComplete 回调替代 tl.call，确保在动画序列彻底完成后稳定解锁按钮
+            tl.eventCallback("onComplete", () => {
+                currentAngles = nextAngles;
+                
+                // 机甲般厚重的巨物开奖庆祝颤动
+                gsap.fromTo(els.machineWrapper, 
+                    {y: -20}, 
+                    {y: 0, duration: 0.6, ease: "bounce.out"}
+                );
+                
+                // 全场致盲特效加成复古白暖光
+                els.flash.style.opacity = '1';
+                setTimeout(() => els.flash.style.opacity = '0', 300);
+
+                try { sfxStorm.pause(); sfxBoom.currentTime = 0; sfxBoom.play(); } catch (e) { }
+                
+                // 重金属定格，全场爆亮，氛围推至高潮！
+                marqueePath.forEach(b => b.classList.add('on'));
+
+                // 探照灯四柱聚顶真理锁定
+                setSpotlightMode('locked');
+
+                spawnExplosion(State.width / 2, State.height / 2 + 150);
+
+                setTimeout(() => {
+                    els.igniteBtn.innerText = "下一抽 NEXT!";
+                    els.igniteBtn.disabled = false;
+                    marqueeActive = false; // 1秒后重新回落待机状态
+                    isSpinning = false;
+
+                    // 探照灯解除锁定，重归自然游弋
+                    setSpotlightMode('idle');
+                }, 1500);
             });
-        }
-
-        function resetDraw() {
-            els.machineScreen.classList.remove('visible');
-            els.glass.classList.remove('visible'); 
-            els.title.style.opacity = '1';
-            els.title.style.transform = 'translate(-50%, -50%) scale(1)';
-            
-            els.igniteBtn.innerText = "LET'S PLAY!";
-            els.igniteBtn.onclick = startDraw;
-
-            particles = []; 
         }
 
         function spawnExplosion(x, y) {
             for (let i = 0; i < Config.fireworksCount; i++) {
-                let p;
-                if (particlePool.length > 0) { p = particlePool.pop(); p.init(x, y); } 
-                else { p = new Confetti(x, y); }
+                let p = particlePool.length > 0 ? particlePool.pop() : new Confetti(x, y);
+                p.init(x, y);
                 particles.push(p);
             }
         }
 
+        function playOpeningCurtain() {
+            gsap.set(document.body, { perspective: 2000 });
+
+            const tl = gsap.timeline();
+            
+            // 逼真的 3D 剧院拉幕动画：制造极致挤压和深度退让，避免抢戏
+            tl.to('.curtain.left', {
+                duration: 4.2,
+                width: "8%",       // 极度收缩为细窄的布边
+                left: "-1%",       // 略微退出版面外
+                rotationY: 45,     // 强烈的3D折缝交叠感
+                rotationZ: -0.5,
+                skewY: -4,         // 下摆沉重拖曳感
+                borderRadius: "0 0 100px 0",
+                boxShadow: "10px 0 30px rgba(0,0,0,0.5), inset -50px 0 80px rgba(0,0,0,0.95)",
+                borderRightWidth: "4px",
+                ease: "power3.inOut"
+            }, 0.5)
+            .to('.curtain.left', {
+                backgroundSize: "2vw 100%", // 背景条纹极致压缩，模拟布料挤压产生的致密褶皱
+                duration: 4.2,
+                ease: "power3.inOut"
+            }, 0.5)
+            .to('.curtain.right', {
+                duration: 4.2,
+                width: "8%",
+                right: "-1%",
+                rotationY: -45,
+                rotationZ: 0.5,
+                skewY: 4,
+                borderRadius: "0 0 0 100px",
+                boxShadow: "-10px 0 30px rgba(0,0,0,0.5), inset 50px 0 80px rgba(0,0,0,0.95)",
+                borderLeftWidth: "4px",
+                ease: "power3.inOut"
+            }, 0.5)
+            .to('.curtain.right', {
+                backgroundSize: "2vw 100%", 
+                duration: 4.2,
+                ease: "power3.inOut"
+            }, 0.5)
+            // 内部舞台缓缓浮现，带有神圣的景深感与聚光灯效果
+            .to('.content-layer', {
+                duration: 3,
+                opacity: 1,
+                scale: 1,
+                ease: "power3.out"
+            }, 1)
+            .fromTo('.machine-wrapper', {
+                y: 120, rotationX: 12, opacity: 0
+            }, {
+                duration: 3,
+                y: 0, rotationX: 0, opacity: 1,
+                ease: "back.out(1.1)"
+            }, 1.2)
+            .call(() => {
+                gsap.set('.curtain', { pointerEvents: "none" }); // 释放界面点击控制权
+            });
+        }
+
         init();
+        playOpeningCurtain();
     </script>
 </body>
 </html>
