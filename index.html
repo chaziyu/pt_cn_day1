@@ -740,8 +740,21 @@
             }, 150); 
         }
 
+        function getSecureRandom(min, max) {
+            // 使用 Web Crypto API 生成真正密码学安全的随机数，防止伪随机可预测规律及模偏差(Modulo bias)
+            const range = max - min + 1;
+            const randomBuffer = new Uint32Array(1);
+            const maxUint = 0xFFFFFFFF;
+            const limit = maxUint - (maxUint % range);
+            do {
+                window.crypto.getRandomValues(randomBuffer);
+            } while (randomBuffer[0] >= limit);
+            return min + (randomBuffer[0] % range);
+        }
+
         function startReels() {
-            const targetStr = Math.floor(Math.random() * Config.totalParticipants).toString().padStart(3, '0');
+            const targetVal = getSecureRandom(1, Config.totalParticipants);
+            const targetStr = targetVal.toString().padStart(3, '0');
             const targetNums = [parseInt(targetStr[0]), parseInt(targetStr[1]), parseInt(targetStr[2])];
 
             const cyls = [document.getElementById('cyl-0'), document.getElementById('cyl-1'), document.getElementById('cyl-2')];
